@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Siddharth Gupta | Portfolio</title>
+    <meta name="description" content="Siddharth Gupta — CSE Student, Aspiring AI/ML Developer, and Freelance Technical Specialist. Explore my projects, skills, and journey.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Navigation -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="#home" class="logo">Siddharth<span>.</span></a>
+            <button class="hamburger" id="hamburger" aria-label="Toggle menu">
+                <span></span><span></span><span></span>
+            </button>
+            <ul class="nav-links" id="nav-links">
+                <li><a href="#home" class="nav-link active" data-section="home">Home</a></li>
+                <li><a href="#projects" class="nav-link" data-section="projects">Projects</a></li>
+                <li><a href="#skills" class="nav-link" data-section="skills">Skills</a></li>
+                <li><a href="#about" class="nav-link" data-section="about">About</a></li>
+                <li><a href="#resume" class="nav-link" data-section="resume">Resume</a></li>
+                <li><a href="#contact" class="nav-link" data-section="contact">Contact</a></li>
+                <li><a href="admin.html" class="admin-nav-link" title="Admin Panel">⚙</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="home" class="hero">
+        <div class="hero-content">
+            <div class="hero-greeting">👋 Hello World</div>
+            <h1 class="hero-title">I'm <span class="highlight" id="hero-name">Siddharth Gupta</span></h1>
+            <h2 class="hero-subtitle">I'm a <span id="typewriter"></span><span class="cursor">|</span></h2>
+            <p class="hero-description" id="hero-tagline"></p>
+            <div class="hero-cta">
+                <a href="#projects" class="btn btn-primary">View My Work 🚀</a>
+                <a href="#contact" class="btn btn-secondary">Get in Touch</a>
+                <a href="#" class="btn btn-resume" id="resume-btn" download style="display:none;">
+                    <span>📄</span> Download Resume
+                </a>
+            </div>
+            <div class="hero-socials" id="hero-socials"></div>
+        </div>
+
+        <!-- Profile Photo -->
+        <div class="hero-photo-wrap">
+            <div class="photo-ring">
+                <div class="photo-inner" id="photo-inner">
+                    <div class="photo-placeholder" id="photo-placeholder">
+                        <span class="photo-emoji" id="photo-emoji">👨‍💻</span>
+                    </div>
+                    <img id="hero-photo-img" src="" alt="Siddharth Gupta" style="display:none; width:100%; height:100%; object-fit:cover; border-radius:50%;">
+                </div>
+            </div>
+            <div class="badge badge-1">💻 CSE</div>
+            <div class="badge badge-2">🤖 AI/ML</div>
+            <div class="badge badge-3">🚀 Python</div>
+        </div>
+    </section>
+
+    <!-- Stats Counter -->
+    <section class="stats-bar">
+        <div class="container">
+            <div class="stats-live-badge" id="stats-live-badge" style="display:none;">
+                <span class="live-dot"></span> Live from GitHub
+            </div>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <span class="stat-number" id="stat-repos">—</span>
+                    <span class="stat-label">Public Repos</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number" id="stat-contributions">—</span>
+                    <span class="stat-label">Contributions</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number" id="stat-followers">—</span>
+                    <span class="stat-label">Followers</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number" id="stat-languages">5+</span>
+                    <span class="stat-label">Languages</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">2+</span>
+                    <span class="stat-label">Years Learning</span>
+                </div>
+            </div>
+            <div id="stats-error" class="stats-error" style="display:none;">Using cached stats — GitHub API unavailable</div>
+        </div>
+    </section>
+
+    <!-- Projects Section -->
+    <section id="projects" class="projects">
+        <div class="container">
+            <h2 class="section-title">My <span>Projects</span></h2>
+            <p class="section-subtitle">All my public GitHub repositories — from fundamentals to real-world builds.</p>
+            <div class="github-link-row">
+                <a href="https://github.com/thesiddharthagupta" target="_blank" rel="noopener noreferrer" class="btn btn-github">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.041-1.416-4.041-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                    View All on GitHub
+                </a>
+            </div>
+            <div class="project-grid" id="project-grid"></div>
+        </div>
+    </section>
+
+    <!-- GitHub Stats Section -->
+    <section class="github-stats-section">
+        <div class="container">
+            <h2 class="section-title">GitHub <span>Stats</span></h2>
+            <div class="github-stats-grid">
+                <div class="github-stat-card">
+                    <img src="https://github-readme-stats.vercel.app/api?username=thesiddharthagupta&show_icons=true&theme=tokyonight&hide_border=true&bg_color=0d0f13&title_color=6366f1&icon_color=ec4899&text_color=f1f5f9&count_private=true" 
+                         alt="GitHub Stats" 
+                         onerror="this.parentElement.style.display='none'">
+                </div>
+                <div class="github-stat-card">
+                    <img src="https://github-readme-stats.vercel.app/api/top-langs/?username=thesiddharthagupta&layout=compact&theme=tokyonight&hide_border=true&bg_color=0d0f13&title_color=6366f1&text_color=f1f5f9" 
+                         alt="Top Languages" 
+                         onerror="this.parentElement.style.display='none'">
+                </div>
+            </div>
+            <div class="github-streak-card">
+                <img src="https://github-readme-streak-stats.herokuapp.com/?user=thesiddharthagupta&theme=tokyonight&hide_border=true&background=0d0f13&ring=6366f1&fire=ec4899&currStreakLabel=f1f5f9" 
+                     alt="GitHub Streak" 
+                     onerror="this.parentElement.style.display='none'">
+            </div>
+        </div>
+    </section>
+
+    <!-- Skills Section -->
+    <section id="skills" class="skills">
+        <div class="container">
+            <h2 class="section-title">My <span>Skills</span></h2>
+            <div class="skills-grid" id="skills-grid"></div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="about">
+        <div class="container">
+            <h2 class="section-title">About <span>Me</span></h2>
+            <div class="about-content">
+                <div class="about-text">
+                    <p id="about-bio1"></p>
+                    <p id="about-bio2"></p>
+                    <div class="about-meta">
+                        <div class="meta-item">📍 <span>Bangalore, Karnataka, India</span></div>
+                        <div class="meta-item">🎓 <span>B.Tech CSE @ BMSIT (2025–2029)</span></div>
+                        <div class="meta-item">💡 <span>Open to Internships & Collaborations</span></div>
+                        <div class="meta-item">📧 <span>thesiddharthagupta@gmail.com</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Education & Experience Section -->
+    <section id="resume" class="resume-section">
+        <div class="container">
+            <div class="resume-grid">
+                <div class="education-wrap">
+                    <h2 class="section-title">My <span>Education</span></h2>
+                    <div id="education-list" class="timeline"></div>
+                </div>
+                <div class="experience-wrap">
+                    <h2 class="section-title">My <span>Experience</span></h2>
+                    <div id="experience-list" class="timeline"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="contact">
+        <div class="container">
+            <h2 class="section-title">Get In <span>Touch</span></h2>
+            <p class="section-subtitle">Have an idea, collaboration, or just want to say hi? Let's connect!</p>
+            <div class="contact-wrapper">
+                <div class="contact-info">
+                    <div class="contact-card">
+                        <span class="contact-icon">📧</span>
+                        <div>
+                            <p class="contact-label">Email</p>
+                            <a href="mailto:thesiddharthagupta@gmail.com" id="contact-email-display">thesiddharthagupta@gmail.com</a>
+                        </div>
+                    </div>
+                    <div class="contact-socials" id="contact-socials-display"></div>
+                </div>
+                <form id="dynamic-contact-form" class="dynamic-form">
+                    <div class="form-group">
+                        <label for="contact-name">Name</label>
+                        <input type="text" id="contact-name" required placeholder="John Doe">
+                    </div>
+                    <div class="form-group">
+                        <label for="contact-email">Email</label>
+                        <input type="email" id="contact-email" required placeholder="john@example.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="contact-message">Message</label>
+                        <textarea id="contact-message" rows="5" required placeholder="Hello! I'd like to talk about..."></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary submit-btn" id="submit-btn">
+                        <span class="btn-text">Send Message 📨</span>
+                        <div class="spinner"></div>
+                    </button>
+                    <div id="form-msg" class="form-message"></div>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-socials" id="footer-socials"></div>
+        <p id="footer-text-display"></p>
+        <p class="footer-built">Built with ❤️ using HTML, CSS & JS</p>
+    </footer>
+
+    <!-- Scroll to Top -->
+    <button id="scroll-top" class="scroll-top" aria-label="Scroll to top" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+    <script src="data.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
