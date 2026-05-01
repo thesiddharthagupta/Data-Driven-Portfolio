@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const cron = require('node-cron');
+const path = require('path');
 const routes = require('./routes');
 const githubSync = require('./githubSync');
 
@@ -15,8 +16,20 @@ app.use(express.json());
 // API Routes
 app.use('/api', routes);
 
-// Serve static frontend files (optional, but good for production)
-// app.use(express.static('public'));
+// Serve frontend assets securely
+const rootDir = path.join(__dirname, '../');
+app.get('/', (req, res) => res.sendFile(path.join(rootDir, 'index.html')));
+app.get('/admin', (req, res) => res.sendFile(path.join(rootDir, 'admin.html')));
+// Serve static assets, excluding sensitive files
+app.use(express.static(rootDir, {
+    index: false, // Don't serve index.html automatically
+    setHeaders: (res, path) => {
+        // Prevent access to sensitive files if requested directly
+        if (path.endsWith('.env') || path.includes('/server/')) {
+            res.status(403).end();
+        }
+    }
+}));
 
 // Health Check
 app.get('/health', (req, res) => {

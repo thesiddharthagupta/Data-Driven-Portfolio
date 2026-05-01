@@ -32,6 +32,7 @@ async function showDashboard() {
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('admin-dashboard').style.display = 'flex';
     loadDashboard();
+    initInactivityTimer();
     // Restore saved GitHub username
     const savedUser = localStorage.getItem('gh_sync_username');
     if (savedUser) {
@@ -55,6 +56,31 @@ async function showDashboard() {
 function showLogin() {
     document.getElementById('login-screen').style.display = 'flex';
     document.getElementById('admin-dashboard').style.display = 'none';
+}
+
+// ── Inactivity Timeout ───────────────────────
+let inactivityTimer;
+function initInactivityTimer() {
+    const timeoutDuration = 15 * 60 * 1000; // 15 minutes
+    
+    function resetTimer() {
+        clearTimeout(inactivityTimer);
+        inactivityTimer = setTimeout(async () => {
+            const supabase = getSupabase();
+            await supabase.auth.signOut();
+            alert("You have been logged out due to inactivity.");
+            showLogin();
+        }, timeoutDuration);
+    }
+
+    // Reset timer on user interaction
+    window.onload = resetTimer;
+    document.onmousemove = resetTimer;
+    document.onkeypress = resetTimer;
+    document.onclick = resetTimer;
+    document.onscroll = resetTimer;
+
+    resetTimer(); // Initialize first timer
 }
 
 // ── Authentication ───────────────────────────
