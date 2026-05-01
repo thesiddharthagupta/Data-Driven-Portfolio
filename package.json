@@ -1,0 +1,24 @@
+{
+  "name": "data-driven-portfolio-main",
+  "version": "1.0.0",
+  "description": "A highly customizable, responsive, and modern personal portfolio designed specifically for Computer Science students and developers.",
+  "main": "admin.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node server/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.105.1",
+    "axios": "^1.15.2",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "lodash": "^4.18.1",
+    "node-cron": "^4.2.1"
+  }
+}
