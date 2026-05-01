@@ -106,5 +106,25 @@ DROP POLICY IF EXISTS "syncstatus_auth_all"  ON sync_status;
 CREATE POLICY "projects_auth_all"   ON projects    FOR ALL USING (auth.role() = 'authenticated');
 CREATE POLICY "syncstatus_auth_all" ON sync_status FOR ALL USING (auth.role() = 'authenticated');
 
+-- 7. Create contact_messages table
+CREATE TABLE IF NOT EXISTS contact_messages (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    name TEXT NOT NULL,
+    email TEXT NOT NULL,
+    message TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+);
+
+-- Enable RLS for contact messages
+ALTER TABLE contact_messages ENABLE ROW LEVEL SECURITY;
+
+-- Public can insert contact messages
+DROP POLICY IF EXISTS "contact_insert_public" ON contact_messages;
+CREATE POLICY "contact_insert_public" ON contact_messages FOR INSERT WITH CHECK (true);
+
+-- Only Admin can read contact messages
+DROP POLICY IF EXISTS "contact_read_auth" ON contact_messages;
+CREATE POLICY "contact_read_auth" ON contact_messages FOR SELECT USING (auth.role() = 'authenticated');
+
 -- Done! You can verify with:
 -- SELECT column_name FROM information_schema.columns WHERE table_name = 'projects';
