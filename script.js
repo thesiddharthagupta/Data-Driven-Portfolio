@@ -313,6 +313,7 @@ async function renderPortfolio() {
     // ── Projects ──────────────────────────────
     const projectGrid = document.getElementById('project-grid');
     if (projectGrid) {
+        let projects = [];
         try {
             // Fetch projects from Supabase structured table
             const supabase = getSupabase();
@@ -324,46 +325,45 @@ async function renderPortfolio() {
                 .order('updated_at', { ascending: false });
 
             if (error) throw error;
+            projects = dbProjects && dbProjects.length > 0 ? dbProjects : (data.projects || []);
+        } catch (e) {
+            console.error('Error loading projects from Supabase, using fallback:', e);
+            projects = data.projects || [];
+        }
 
-            const projects = dbProjects && dbProjects.length > 0 ? dbProjects : (data.projects || []);
-
-            if (projects.length === 0) {
-                projectGrid.innerHTML = '<p class="no-projects">No projects yet. Add some from the admin panel!</p>';
-            } else {
-                projectGrid.innerHTML = projects.map(project => {
-                    const techStack = project.tech_stack || [];
-                    const mainLang = project.language || (techStack.length > 0 ? techStack[0] : '');
-                    const langColor = LANG_COLORS[mainLang] || LANG_COLORS['default'];
-                    const langBadge = mainLang ? `<span class="lang-badge" style="background:${langColor}22; color:${langColor}; border:1px solid ${langColor}44;">● ${escapeHTML(mainLang)}</span>` : '';
-                    const githubLink = project.github_url || '#';
-                    const liveLink = project.link || project.github_url || '#';
-                    const isLive = !!project.link;
-                    
-                    return `
-                        <div class="project-card" onclick="window.open('${escapeHTML(liveLink)}', '_blank')" style="cursor: pointer;">
-                            <div class="project-img-placeholder ${escapeHTML(project.gradient || 'gradient-1')}">
-                                <div class="project-overlay">
-                                    <a href="${escapeHTML(githubLink)}" class="project-overlay-btn" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">View Code →</a>
-                                </div>
-                            </div>
-                            <div class="project-info">
-                                <div class="project-header-row">
-                                    <h3>${escapeHTML(project.title)}</h3>
-                                    ${langBadge}
-                                </div>
-                                <p>${escapeHTML(project.description)}</p>
-                                <div class="project-tags">
-                                    ${techStack.slice(0, 3).map(tag => `<span class="tag">${tag}</span>`).join('')}
-                                </div>
-                                <a href="${escapeHTML(liveLink)}" class="view-link" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">${isLive ? 'Live Demo →' : 'View Project →'}</a>
+        if (projects.length === 0) {
+            projectGrid.innerHTML = '<p class="no-projects">No projects yet. Add some from the admin panel!</p>';
+        } else {
+            projectGrid.innerHTML = projects.map(project => {
+                const techStack = project.tech_stack || [];
+                const mainLang = project.language || (techStack.length > 0 ? techStack[0] : '');
+                const langColor = LANG_COLORS[mainLang] || LANG_COLORS['default'];
+                const langBadge = mainLang ? `<span class="lang-badge" style="background:${langColor}22; color:${langColor}; border:1px solid ${langColor}44;">● ${escapeHTML(mainLang)}</span>` : '';
+                const githubLink = project.github_url || '#';
+                const liveLink = project.link || project.github_url || '#';
+                const isLive = !!project.link;
+                
+                return `
+                    <div class="project-card" onclick="window.open('${escapeHTML(liveLink)}', '_blank')" style="cursor: pointer;">
+                        <div class="project-img-placeholder ${escapeHTML(project.gradient || 'gradient-1')}">
+                            <div class="project-overlay">
+                                <a href="${escapeHTML(githubLink)}" class="project-overlay-btn" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">View Code →</a>
                             </div>
                         </div>
-                    `;
-                }).join('');
-            }
-        } catch (e) {
-            console.error('Error loading projects:', e);
-            projectGrid.innerHTML = '<p class="no-projects">Error loading projects. Please try again later.</p>';
+                        <div class="project-info">
+                            <div class="project-header-row">
+                                <h3>${escapeHTML(project.title)}</h3>
+                                ${langBadge}
+                            </div>
+                            <p>${escapeHTML(project.description)}</p>
+                            <div class="project-tags">
+                                ${techStack.slice(0, 3).map(tag => `<span class="tag">${tag}</span>`).join('')}
+                            </div>
+                            <a href="${escapeHTML(liveLink)}" class="view-link" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">${isLive ? 'Live Demo →' : 'View Project →'}</a>
+                        </div>
+                    </div>
+                `;
+            }).join('');
         }
     }
 
@@ -532,6 +532,19 @@ function initContactForm() {
                 console.error('Supabase contact error:', error);
                 showFormMsg('❌ Failed to send message. Please try again.', 'error');
             } else {
+                // Send email using EmailJS only if DB insert succeeds
+                try {
+                    await emailjs.send("service_j0wbcon", "template_kpujbj8", {
+                        name: name,
+                        email: email,
+                        message: message,
+                        title: "Portfolio Contact Form",
+                        time: new Date().toLocaleString()
+                    });
+                } catch (emailErr) {
+                    console.error('EmailJS error:', emailErr);
+                }
+
                 showFormMsg(`✅ Message sent! I'll get back to you soon, ${escapeHTML(name)}.`, 'success');
                 form.reset();
             }
