@@ -156,6 +156,7 @@ function initNavigation() {
             // Lazy-load data for dynamic sections
             if (sectionId === 'projects') loadProjects();
             if (sectionId === 'sync')     updateSyncUI();
+            if (sectionId === 'messages') loadMessages();
         });
     });
 }
@@ -657,6 +658,64 @@ function saveGitHubCredentials() {
 async function saveContact() {
     currentData.contact.email = document.getElementById('contact-email-admin').value;
     await persistData();
+}
+
+// ── Messages Management (Supabase) ──────────
+
+async function loadMessages() {
+    const grid = document.getElementById('messages-grid');
+    if (!grid) return;
+
+    grid.innerHTML = '<p style="color:var(--text-muted);">Loading messages…</p>';
+    try {
+        const supabase = getSupabase();
+        const { data: messages, error } = await supabase
+            .from('contact_messages')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(100);
+
+        if (error) throw error;
+
+        if (!messages || messages.length === 0) {
+            grid.innerHTML = '<p style="color:var(--text-muted);">No messages found.</p>';
+            return;
+        }
+
+        grid.innerHTML = messages.map(msg => {
+            const time = new Date(msg.created_at).toLocaleString();
+            return `
+            <div class="project-admin-card" id="msg-${msg.id}">
+                <div class="project-admin-header">
+                    <h4 style="margin:0;">${escapeAdminHTML(msg.name)}</h4>
+                    <div style="font-size: 0.8rem; color: var(--text-muted);">${time}</div>
+                </div>
+                <div style="font-size: 0.9rem; color: #818cf8; margin-bottom: 8px;">
+                    <a href="mailto:${escapeAdminHTML(msg.email)}" style="color: inherit; text-decoration: none;">✉️ ${escapeAdminHTML(msg.email)}</a>
+                </div>
+                <p class="project-admin-desc" style="white-space: pre-wrap; margin-bottom: 12px; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 6px;">${escapeAdminHTML(msg.message)}</p>
+                <div class="project-admin-footer">
+                    <button class="btn-admin btn-danger-admin" style="padding: 4px 10px; font-size: 0.8rem; width: auto;" onclick="deleteMessage('${msg.id}')">🗑️ Delete</button>
+                </div>
+            </div>
+        `}).join('');
+    } catch (e) {
+        console.error('Error loading messages:', e);
+        grid.innerHTML = `<p style="color:#f87171;">Error loading messages: ${e.message}</p>`;
+    }
+}
+
+async function deleteMessage(id) {
+    if (!confirm('Are you sure you want to delete this message?')) return;
+    try {
+        const supabase = getSupabase();
+        const { error } = await supabase.from('contact_messages').delete().eq('id', id);
+        if (error) throw error;
+        showToast('Message deleted');
+        loadMessages();
+    } catch (e) {
+        showToast('Error deleting message: ' + e.message);
+    }
 }
 async function saveSocials() {
     currentData.socials.github = document.getElementById('social-github').value;
