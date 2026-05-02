@@ -182,11 +182,10 @@ async function saveData(data) {
   data._version = DATA_VERSION;
   
   try {
-    // We use a simple strategy: upsert the first row or just insert new ones and fetch the latest
-    // For simplicity, we'll try to update 'id: 1' or insert if not exists
+    // Upsert row with id: 1 to prevent infinite growth
     const { error } = await supabase
       .from('portfolio_data')
-      .insert({ content: data, updated_at: new Date() });
+      .upsert({ id: 1, content: data, updated_at: new Date() }, { onConflict: 'id' });
 
     if (error) throw error;
     return true;
