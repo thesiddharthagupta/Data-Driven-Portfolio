@@ -73,6 +73,9 @@
                 <a href="#" class="nav-item" data-section="contact">
                     <span class="nav-icon">✉️</span> Contact
                 </a>
+                <a href="#" class="nav-item" data-section="messages">
+                    <span class="nav-icon">📥</span> Messages
+                </a>
                 <a href="#" class="nav-item" data-section="socials">
                     <span class="nav-icon">🔗</span> Socials
                 </a>
@@ -268,6 +271,20 @@
                         <input type="email" id="contact-email-admin">
                     </div>
                     <button class="btn-admin btn-primary-admin" onclick="saveContact()">💾 Save Contact</button>
+                </div>
+            </section>
+
+            <!-- ── Messages ── -->
+            <section id="section-messages" class="admin-section">
+                <div class="section-header">
+                    <h2>📥 Contact Messages</h2>
+                    <p>View messages submitted through your portfolio contact form.</p>
+                </div>
+                <div style="margin-bottom: 20px;">
+                    <button class="btn-admin btn-secondary-admin" onclick="loadMessages()">🔄 Refresh Messages</button>
+                </div>
+                <div id="messages-grid" class="projects-admin-grid">
+                    <!-- Messages will be loaded here dynamically -->
                 </div>
             </section>
 
