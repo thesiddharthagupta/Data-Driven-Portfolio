@@ -60,7 +60,7 @@ h1, h2, h3, h4, h5, h6, .logo {
 }
 
 section {
-    padding: 6rem 0;
+    padding: 4.5rem 0;
 }
 
 /* Navigation */
@@ -734,7 +734,7 @@ footer {
 
 /* ── Resume & Timeline ──────────────────── */
 .resume-section {
-    padding: 100px 0;
+    padding: 4.5rem 0;
     background: rgba(10, 15, 25, 0.5);
     position: relative;
     overflow: hidden;
@@ -924,13 +924,13 @@ footer {
 
 /* Section Spacing & Transitions */
 section {
-    padding: 8rem 0;
+    padding: 4.5rem 0;
     transition: background 0.5s ease;
 }
 
 .section-title {
     font-size: 3rem;
-    margin-bottom: 4rem;
+    margin-bottom: 2.5rem;
 }
 
 /* Projects Refinements */
@@ -1060,7 +1060,7 @@ section {
     text-align: center;
     color: var(--text-secondary);
     font-size: 1rem;
-    margin-top: -2.5rem;
+    margin-top: -2rem;
     margin-bottom: 2.5rem;
     max-width: 600px;
     margin-left: auto;
@@ -1386,7 +1386,7 @@ section {
 
 /* ── GitHub Stats Section ────────────────── */
 .github-stats-section {
-    padding: 6rem 0;
+    padding: 3rem 0 4.5rem;
     background: rgba(10,12,18,0.3);
 }
 .github-stats-grid {

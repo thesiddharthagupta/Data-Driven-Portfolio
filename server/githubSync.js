@@ -31,9 +31,11 @@ class GitHubSyncService {
             const repos = await this.fetchAllRepos();
             console.log(`Found ${repos.length} repositories.`);
 
-            // 2. Process each repository
-            for (const repo of repos) {
-                await this.processRepo(repo);
+            // 2. Process repositories in batches of 3 to speed up without hitting rate limits too fast
+            const batchSize = 3;
+            for (let i = 0; i < repos.length; i += batchSize) {
+                const batch = repos.slice(i, i + batchSize);
+                await Promise.all(batch.map(repo => this.processRepo(repo)));
             }
 
             // 3. Update sync status
@@ -154,18 +156,16 @@ class GitHubSyncService {
     async updateSyncStatus(status, error = null) {
         try {
             const { data } = await this.supabase.from('sync_status').select('id').limit(1).maybeSingle();
+            const payload = {
+                last_sync: new Date(),
+                status: status,
+                error_message: error
+            };
+
             if (data) {
-                await this.supabase.from('sync_status').update({
-                    last_sync: new Date(),
-                    status: status,
-                    error_message: error
-                }).eq('id', data.id);
+                await this.supabase.from('sync_status').update(payload).eq('id', data.id);
             } else {
-                await this.supabase.from('sync_status').insert({
-                    last_sync: new Date(),
-                    status: status,
-                    error_message: error
-                });
+                await this.supabase.from('sync_status').insert({ id: 1, ...payload });
             }
         } catch (e) {
             console.error('Error updating sync status:', e);

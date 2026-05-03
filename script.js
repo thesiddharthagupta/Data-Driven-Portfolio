@@ -138,18 +138,28 @@ async function applyGitHubStats(stats) {
 }
 
 function animateNumber(el, target, suffix = '') {
-    const duration = 1200;
+    if (!el) return;
+    const duration = 1500;
     const start = performance.now();
-    const from = parseInt(el.textContent.replace(/\D/g, ''), 10) || 0;
+    // Parse current value, default to 0
+    const from = parseInt(el.textContent.replace(/[^\d]/g, ''), 10) || 0;
+    
+    // Don't animate if target is same as current or not a number
+    if (from === target || isNaN(target)) {
+        el.textContent = (target || 0) + suffix;
+        return;
+    }
 
     function tick(now) {
         const elapsed = now - start;
         const progress = Math.min(elapsed / duration, 1);
-        // Ease-out cubic
+        // Ease-out cubic for smoother feel
         const eased = 1 - Math.pow(1 - progress, 3);
         const current = Math.round(from + (target - from) * eased);
         el.textContent = current + suffix;
-        if (progress < 1) requestAnimationFrame(tick);
+        if (progress < 1) {
+            requestAnimationFrame(tick);
+        }
     }
     requestAnimationFrame(tick);
 }
@@ -595,16 +605,12 @@ function initHamburger() {
 // ── Animate Stats Counter ─────────────────────
 function animateCounters() {
     document.querySelectorAll('.stat-number').forEach(el => {
-        const target = parseInt(el.textContent.replace(/\D/g, ''), 10);
+        const text = el.textContent.trim();
+        const target = parseInt(text.replace(/[^\d]/g, ''), 10);
         if (isNaN(target)) return;
-        const suffix = el.textContent.replace(/[0-9]/g, '');
-        let count = 0;
-        const step = Math.ceil(target / 60);
-        const timer = setInterval(() => {
-            count = Math.min(count + step, target);
-            el.textContent = count + suffix;
-            if (count >= target) clearInterval(timer);
-        }, 20);
+        const suffix = text.replace(/[0-9]/g, '');
+        // Use the unified smooth animation function
+        animateNumber(el, target, suffix);
     });
 }
 
@@ -654,17 +660,21 @@ function initContactForm() {
                 console.error('Supabase contact error:', error);
                 showFormMsg('❌ Failed to send message. Please try again.', 'error');
             } else {
-                // Send email using EmailJS only if DB insert succeeds
-                try {
-                    await emailjs.send("service_j0wbcon", "template_kpujbj8", {
-                        name: name,
-                        email: email,
-                        message: message,
-                        title: "Portfolio Contact Form",
-                        time: new Date().toLocaleString()
-                    });
-                } catch (emailErr) {
-                    console.error('EmailJS error:', emailErr);
+                // Send email using EmailJS only if DB insert succeeds and SDK is loaded
+                if (typeof emailjs !== 'undefined') {
+                    try {
+                        await emailjs.send("service_j0wbcon", "template_kpujbj8", {
+                            name: name,
+                            email: email,
+                            message: message,
+                            title: "Portfolio Contact Form",
+                            time: new Date().toLocaleString()
+                        });
+                    } catch (emailErr) {
+                        console.error('EmailJS error:', emailErr);
+                    }
+                } else {
+                    console.warn('EmailJS SDK not loaded, skipping email notification.');
                 }
 
                 showFormMsg(`✅ Message sent! I'll get back to you soon, ${escapeHTML(name)}.`, 'success');

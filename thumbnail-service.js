@@ -167,7 +167,7 @@ function roundRect(ctx, x, y, w, h, r) {
  * @returns {string}        — data:image/png base64 URL
  */
 function generateThumbnail(project) {
-  const W = 800, H = 400;
+  const W = 600, H = 300; // Reduced from 800x400 for better performance
   const canvas = document.createElement('canvas');
   canvas.width  = W;
   canvas.height = H;
@@ -208,7 +208,7 @@ function generateThumbnail(project) {
   ctx.fillRect(0, 0, W, H);
 
   // ── 4. Code editor panel (left 58%) ──────────
-  const panelX = 24, panelY = 18, panelW = W * 0.58, panelH = H - 90;
+  const panelX = 20, panelY = 15, panelW = W * 0.58, panelH = H - 80;
 
   // Panel bg
   ctx.fillStyle = 'rgba(0,0,0,0.55)';
@@ -281,10 +281,10 @@ function generateThumbnail(project) {
 
   // Project title (wrapped)
   const title = (project.title || 'Project').replace(/-/g, ' ');
-  ctx.font = 'bold 20px Outfit, Inter, sans-serif';
+  ctx.font = 'bold 18px Outfit, Inter, sans-serif'; // Slightly smaller font
   ctx.fillStyle = '#f1f5f9';
   const titleLines = wrapText(ctx, title, infoW);
-  let ty = infoY + 50;
+  let ty = infoY + 45;
   titleLines.slice(0, 3).forEach(ln => {
     ctx.fillText(ln, infoX, ty);
     ty += 26;
@@ -362,7 +362,7 @@ function generateThumbnail(project) {
   ctx.fillText(badge, W - 20 - bw / 2, barY + 27);
   ctx.textAlign = 'left';
 
-  return canvas.toDataURL('image/png');
+  return canvas.toDataURL('image/webp', 0.6); // Use WebP 60% for significantly smaller DB payload
 }
 
 // ── Syntax tokenizer ─────────────────────────

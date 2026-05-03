@@ -126,20 +126,17 @@ async function fetchRepoLanguages(repoName) {
 async function saveSyncStatus(status, errorMessage) {
     var supabase = getSupabase();
     try {
-        var result = await supabase.from('sync_status').select('id').limit(1).maybeSingle();
-        if (result.data) {
-            await supabase.from('sync_status').update({
-                last_sync: new Date().toISOString(),
-                status: status,
-                error_message: errorMessage || null
-            }).eq('id', result.data.id);
+        const { data: existing } = await supabase.from('sync_status').select('id').limit(1).maybeSingle();
+        const payload = {
+            last_sync: new Date().toISOString(),
+            status: status,
+            error_message: errorMessage || null
+        };
+
+        if (existing) {
+            await supabase.from('sync_status').update(payload).eq('id', existing.id);
         } else {
-            await supabase.from('sync_status').insert({
-                id: 1, // Explicitly set ID for the first row
-                last_sync: new Date().toISOString(),
-                status: status,
-                error_message: errorMessage || null
-            });
+            await supabase.from('sync_status').insert({ id: 1, ...payload });
         }
     } catch (e) {
         console.error('Error saving sync status:', e);
@@ -189,18 +186,19 @@ async function runGitHubSync(onProgress) {
             // Check for existing project with manual override
             var existResult = await supabase
                 .from('projects')
-                .select('id, title, description, manual_override, display_order, is_featured, updated_at, language, tech_stack')
+                .select('id, title, description, manual_override, display_order, is_featured, updated_at, language, tech_stack, languages')
                 .eq('github_id', repo.id)
                 .maybeSingle();
             var existing = existResult.data;
 
+            var languages = existing ? (existing.languages || []) : [];
             var techStack = existing ? existing.tech_stack : undefined;
             var mainLanguage = existing ? existing.language : (repo.language || 'Unknown');
 
             // Fetch metadata ONLY if repo has been updated or is new (to save rate limits)
             if (!existing || existing.updated_at !== repo.updated_at) {
                 if (!existing || !existing.manual_override) {
-                    var languages = await fetchRepoLanguages(repo.name);
+                    languages = await fetchRepoLanguages(repo.name);
                     mainLanguage = languages.length > 0 ? languages[0] : (repo.language || 'Unknown');
                     techStack = await detectTechStack(repo.name);
 
@@ -220,7 +218,7 @@ async function runGitHubSync(onProgress) {
                 link: repo.homepage || null,
                 updated_at: repo.updated_at,
                 language: mainLanguage,
-                languages: await fetchRepoLanguages(repo.name),
+                languages: languages,
                 stars: repo.stargazers_count,
                 forks: repo.forks_count,
                 is_github: true,

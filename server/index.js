@@ -24,9 +24,11 @@ app.get('/admin', (req, res) => res.sendFile(path.join(rootDir, 'admin/index.htm
 app.use(express.static(rootDir, {
     index: false, // Don't serve index.html automatically
     setHeaders: (res, path) => {
-        // Prevent access to sensitive files and direct HTML access if requested directly
-        const filename = path.split(/[\\/]/).pop();
-        if (filename === '.env' || path.includes('/server/') || path.includes('/admin/index.html')) {
+        const filename = path.split(/[\\/]/).pop().toLowerCase();
+        const sensitiveFiles = ['.env', 'package.json', 'package-lock.json', 'migration.sql', 'config.js'];
+        const sensitiveDirs = ['/server/', '/admin/index.html', '/.git/'];
+        
+        if (sensitiveFiles.includes(filename) || sensitiveDirs.some(dir => path.includes(dir))) {
             res.status(403).end();
         }
     }
