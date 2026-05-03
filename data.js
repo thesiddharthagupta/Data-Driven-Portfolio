@@ -182,12 +182,29 @@ async function saveData(data) {
   data._version = DATA_VERSION;
   
   try {
-    // Upsert row with id: 1 to prevent infinite growth
-    const { error } = await supabase
+    // Check if a row already exists to avoid explicit ID insertion issues
+    const { data: existing, error: fetchErr } = await supabase
       .from('portfolio_data')
-      .upsert({ id: 1, content: data, updated_at: new Date() }, { onConflict: 'id' });
+      .select('id')
+      .order('id', { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
-    if (error) throw error;
+    if (fetchErr) throw fetchErr;
+
+    if (existing) {
+      const { error } = await supabase
+        .from('portfolio_data')
+        .update({ content: data, updated_at: new Date() })
+        .eq('id', existing.id);
+      if (error) throw error;
+    } else {
+      const { error } = await supabase
+        .from('portfolio_data')
+        .insert({ content: data, updated_at: new Date() });
+      if (error) throw error;
+    }
+
     return true;
   } catch (e) {
     console.error('Error saving to Supabase:', e);
