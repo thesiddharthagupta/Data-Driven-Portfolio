@@ -434,9 +434,24 @@ section {
 }
 
 .project-info p {
-    color: var(--text-secondary);
+    color: var(--text-muted);
     font-size: 0.95rem;
+    line-height: 1.6;
     margin-bottom: 1.5rem;
+}
+
+/* See More Button */
+.see-more-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 3rem;
+}
+
+#see-more-btn {
+    padding: 12px 30px;
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
 }
 
 .view-link {
@@ -999,6 +1014,173 @@ section {
     transition: transform 0.2s;
 }
 .project-overlay-btn:hover { transform: scale(1.05); }
+
+/* ── Modal Styles ────────────────────────── */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(8px);
+    overflow-y: auto;
+}
+
+.modal-content {
+    background: var(--bg-card);
+    margin: 5% auto;
+    padding: 2.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    width: 90%;
+    max-width: 800px;
+    border-radius: 20px;
+    position: relative;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    animation: modalFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalFadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.close-modal {
+    position: absolute;
+    right: 1.5rem;
+    top: 1.5rem;
+    color: var(--text-muted);
+    font-size: 2rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: color 0.3s;
+}
+
+.close-modal:hover {
+    color: var(--accent-1);
+}
+
+.modal-header {
+    margin-bottom: 2rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 1rem;
+}
+
+.modal-header h2 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 2rem;
+    color: var(--text-bright);
+}
+
+.cover-letter-text {
+    font-family: 'Inter', sans-serif;
+    font-size: 1.1rem;
+    line-height: 1.8;
+    color: var(--text-secondary);
+    white-space: pre-wrap;
+    padding: 1.5rem;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.modal-footer {
+    margin-top: 2rem;
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+}
+
+.btn-cover-letter {
+    margin-top: 1rem;
+    padding: 8px 16px;
+    font-size: 0.85rem;
+    background: rgba(99, 102, 241, 0.1);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    color: var(--accent-1);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-cover-letter:hover {
+    background: var(--accent-1);
+    color: white;
+    transform: translateY(-2px);
+}
+
+/* ── My Projects Page ───────────────────── */
+.projects-page .projects-hero {
+    padding: 120px 0 80px;
+    background: radial-gradient(circle at 50% -20%, rgba(99, 102, 241, 0.15), transparent 70%);
+}
+
+.project-filters-row {
+    margin-bottom: 3rem;
+    display: flex;
+    justify-content: center;
+}
+
+.search-wrap {
+    width: 100%;
+    max-width: 600px;
+    position: relative;
+}
+
+.search-wrap input {
+    width: 100%;
+    padding: 15px 25px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    color: var(--text-bright);
+    font-size: 1rem;
+    transition: all 0.3s;
+    outline: none;
+}
+
+.search-wrap input:focus {
+    border-color: var(--accent-1);
+    background: rgba(255, 255, 255, 0.05);
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+}
+
+.loading-spinner-wrap {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 4rem;
+}
+
+.loading-spinner-wrap .spinner {
+    margin: 0 auto 1rem;
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(255, 255, 255, 0.1);
+    border-top-color: var(--accent-1);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Thumbnail Support */
+.project-img-placeholder img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+}
+
+.project-card:hover .project-img-placeholder img {
+    transform: scale(1.05);
+}
 
 /* ── Skill Card Icon ─────────────────────── */
 .skill-icon { font-size: 2rem; margin-bottom: 0.75rem; line-height: 1; }
