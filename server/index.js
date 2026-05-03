@@ -19,13 +19,14 @@ app.use('/api', routes);
 // Serve frontend assets securely
 const rootDir = path.join(__dirname, '../');
 app.get('/', (req, res) => res.sendFile(path.join(rootDir, 'index.html')));
-app.get('/admin', (req, res) => res.sendFile(path.join(rootDir, 'admin.html')));
+app.get('/admin', (req, res) => res.sendFile(path.join(rootDir, 'admin/index.html')));
 // Serve static assets, excluding sensitive files
 app.use(express.static(rootDir, {
     index: false, // Don't serve index.html automatically
     setHeaders: (res, path) => {
-        // Prevent access to sensitive files if requested directly
-        if (path.endsWith('.env') || path.includes('/server/')) {
+        // Prevent access to sensitive files and direct HTML access if requested directly
+        const filename = path.split(/[\\/]/).pop();
+        if (filename === '.env' || path.includes('/server/') || path.includes('/admin/index.html')) {
             res.status(403).end();
         }
     }
