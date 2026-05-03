@@ -9,11 +9,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
     <!-- Cropper.js -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
-    <link rel="stylesheet" href="admin.css">
+    <link rel="stylesheet" href="../admin.css">
     <!-- Supabase SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="config.js"></script>
-    <script src="supabase-init.js"></script>
+    <script src="../config.js"></script>
+    <script src="../supabase-init.js"></script>
 </head>
 <body>
 
@@ -40,8 +40,10 @@
     <!-- ── Admin Dashboard ── -->
     <div id="admin-dashboard" class="admin-dashboard" style="display:none;">
 
-        <!-- Sidebar -->
-        <aside class="sidebar">
+        <!-- Sidebar Toggle (Mobile Only) -->
+        <button id="sidebar-toggle" class="sidebar-toggle" aria-label="Toggle Sidebar">☰</button>
+
+        <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <span class="sidebar-logo">⚙️ Portfolio Admin</span>
             </div>
@@ -62,7 +64,7 @@
                     <span class="nav-icon">💼</span> Experience
                 </a>
                 <a href="#" class="nav-item" data-section="certifications">
-                    <span class="nav-icon">📜</span> Certifications
+                    <span class="nav-icon">📜</span> My Achievements
                 </a>
                 <a href="#" class="nav-item" data-section="skills">
                     <span class="nav-icon">⭐</span> Skills
@@ -91,9 +93,12 @@
                 <a href="#" class="nav-item" data-section="data">
                     <span class="nav-icon">💾</span> Data
                 </a>
+                <a href="#" class="nav-item" data-section="activity">
+                    <span class="nav-icon">📜</span> Activity Log
+                </a>
             </nav>
             <div class="sidebar-footer">
-                <a href="index.html" target="_blank" class="view-site-btn">👁 View Portfolio</a>
+                <a href="../index.html" target="_blank" class="view-site-btn">👁 View Portfolio</a>
                 <button id="logout-btn" class="logout-btn">Logout</button>
             </div>
         </aside>
@@ -190,6 +195,26 @@
                         <label>Bio Paragraph 2</label>
                         <textarea id="about-bio2" rows="5"></textarea>
                     </div>
+                    <div class="card-row">
+                        <div class="field-group">
+                            <label for="about-location">Location</label>
+                            <input type="text" id="about-location">
+                        </div>
+                        <div class="field-group">
+                            <label for="about-edu">Education Summary</label>
+                            <input type="text" id="about-edu">
+                        </div>
+                    </div>
+                    <div class="card-row">
+                        <div class="field-group">
+                            <label for="about-availability">Availability Status</label>
+                            <input type="text" id="about-availability">
+                        </div>
+                        <div class="field-group">
+                            <label for="about-email">Public Contact Email</label>
+                            <input type="text" id="about-email">
+                        </div>
+                    </div>
                     <button class="btn-admin btn-primary-admin" onclick="saveAbout()">💾 Save About</button>
                 </div>
             </section>
@@ -216,15 +241,15 @@
                 <button class="btn-admin btn-primary-admin" style="margin-top:20px;" onclick="saveExperience()">💾 Save Experience</button>
             </section>
 
-            <!-- ── Certifications ── -->
+            <!-- ── Achievements ── -->
             <section id="section-certifications" class="admin-section">
                 <div class="section-header">
-                    <h2>📜 Certifications</h2>
-                    <p>Add your certificates and achievements.</p>
+                    <h2>📜 My Achievements</h2>
+                    <p>Add your certificates, awards, and major milestones.</p>
                 </div>
                 <div id="certifications-list"></div>
-                <button class="btn-admin btn-secondary-admin" onclick="addCertification()">➕ Add Certification</button>
-                <button class="btn-admin btn-primary-admin" style="margin-top:20px;" onclick="saveCertifications()">💾 Save Certifications</button>
+                <button class="btn-admin btn-secondary-admin" onclick="addCertification()">➕ Add Achievement</button>
+                <button class="btn-admin btn-primary-admin" style="margin-top:20px;" onclick="saveCertifications()">💾 Save Achievements</button>
             </section>
 
             <!-- ── Skills ── -->
@@ -423,6 +448,20 @@
                 </div>
             </section>
 
+            <!-- ── Activity Log ── -->
+            <section id="section-activity" class="admin-section">
+                <div class="section-header">
+                    <h2>📜 Activity Log</h2>
+                    <p>Track all changes made to your portfolio settings and projects.</p>
+                </div>
+                <div style="margin-bottom: 20px;">
+                    <button class="btn-admin btn-secondary-admin" onclick="loadActivityLogs()">🔄 Refresh Logs</button>
+                </div>
+                <div id="activity-log-list" class="activity-log-list">
+                    <!-- Activity logs will be loaded here dynamically -->
+                </div>
+            </section>
+
         </main>
     </div>
 
@@ -460,10 +499,58 @@
         </div>
     </div>
 
+    <!-- Project Edit Modal -->
+    <div id="project-edit-modal" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3>Edit Project Details</h3>
+                <span class="close" onclick="closeProjectModal()">&times;</span>
+            </div>
+            <div style="padding: 1.5rem;">
+                <input type="hidden" id="edit-project-id">
+                <div class="field-group">
+                    <label>Project Title</label>
+                    <input type="text" id="edit-project-title">
+                </div>
+                <div class="field-group">
+                    <label>Description</label>
+                    <textarea id="edit-project-desc" rows="4"></textarea>
+                </div>
+                <div class="field-group">
+                    <label>Live Link</label>
+                    <input type="url" id="edit-project-link" placeholder="https://...">
+                </div>
+                
+                <div class="field-group" style="margin-top: 1rem; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 1rem;">
+                    <label>Project Thumbnail (Image)</label>
+                    <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
+                        <div id="edit-project-thumb-preview" style="width: 120px; height: 80px; background: rgba(255,255,255,0.03); border-radius: 8px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center;">
+                            <span style="color: var(--text-muted); font-size: 0.8rem;">No Image</span>
+                        </div>
+                        <div style="flex: 1;">
+                            <label class="btn-admin btn-secondary-admin" style="cursor:pointer; font-size: 0.85rem; padding: 8px 12px; width: auto;">
+                                📤 Upload Thumbnail
+                                <input type="file" id="project-thumb-upload" accept="image/*" style="display:none;" onchange="handleThumbnailUpload(event)">
+                            </label>
+                            <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 5px;">Recommended size: 600x400px</p>
+                        </div>
+                    </div>
+                    <label>Or Thumbnail URL</label>
+                    <input type="url" id="edit-project-thumb-url" placeholder="https://...">
+                </div>
+
+                <div style="display:flex; gap:1rem; justify-content:flex-end; margin-top: 1.5rem;">
+                    <button class="btn-admin btn-secondary-admin" style="width:auto;" onclick="closeProjectModal()">Cancel</button>
+                    <button class="btn-admin btn-primary-admin" style="width:auto;" onclick="saveProjectEdit()">💾 Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
-    <script src="data.js"></script>
-    <script src="github-sync.js"></script>
-    <script src="admin.js"></script>
+    <script src="../data.js"></script>
+    <script src="../github-sync.js"></script>
+    <script src="../admin.js"></script>
 </body>
 </html>
