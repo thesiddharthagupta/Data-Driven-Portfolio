@@ -10,28 +10,28 @@ var GITHUB_SYNC_CONFIG = {
 };
 
 var LANG_GRADIENT_MAP = {
-    'Python':     'gradient-2',
+    'Python': 'gradient-2',
     'JavaScript': 'gradient-4',
     'TypeScript': 'gradient-4',
-    'C':          'gradient-1',
-    'C++':        'gradient-5',
-    'C#':         'gradient-1',
-    'Java':       'gradient-3',
-    'HTML':       'gradient-5',
-    'CSS':        'gradient-3',
-    'Markdown':   'gradient-2',
-    'default':    'gradient-1'
+    'C': 'gradient-1',
+    'C++': 'gradient-5',
+    'C#': 'gradient-1',
+    'Java': 'gradient-3',
+    'HTML': 'gradient-5',
+    'CSS': 'gradient-3',
+    'Markdown': 'gradient-2',
+    'default': 'gradient-1'
 };
 
 // Set GitHub credentials at runtime
 function setGitHubCredentials(username, token) {
     if (username) GITHUB_SYNC_CONFIG.USERNAME = username;
-    if (token)    GITHUB_SYNC_CONFIG.TOKEN    = token;
+    if (token) GITHUB_SYNC_CONFIG.TOKEN = token;
 }
 
 // Format repo name: "my-cool-repo" -> "My Cool Repo"
 function formatRepoTitle(name) {
-    return name.replace(/[-_]/g, ' ').replace(/\b\w/g, function(c) { return c.toUpperCase(); });
+    return name.replace(/[-_]/g, ' ').replace(/\b\w/g, function (c) { return c.toUpperCase(); });
 }
 
 // Build GitHub API headers
@@ -46,7 +46,7 @@ function buildHeaders() {
 // Fetch all repos (handles pagination)
 async function fetchAllRepos() {
     var username = GITHUB_SYNC_CONFIG.USERNAME;
-    var headers  = buildHeaders();
+    var headers = buildHeaders();
     var allRepos = [];
     var page = 1;
 
@@ -56,9 +56,9 @@ async function fetchAllRepos() {
             { headers: headers }
         );
         if (!res.ok) {
-            var err = await res.json().catch(function() { return {}; });
+            var err = await res.json().catch(function () { return {}; });
             if (res.status === 403 || (err.message && err.message.includes('rate limit'))) {
-                throw new Error('GitHub API Rate Limit Reached! GitHub blocked your IP. To fix this instantly, please enter a Personal Access Token in the GitHub Sync settings above, or wait 1 hour.');
+                throw new Error('GitHub API Rate Limit Reached! To fix this, please enter a Personal Access Token in the GitHub Sync settings above. This token is only stored in your browser.');
             }
             throw new Error(err.message || 'GitHub API error ' + res.status + '. If rate limited, add a Personal Access Token in the Sync section.');
         }
@@ -74,8 +74,8 @@ async function fetchAllRepos() {
 // Detect tech stack by inspecting repo root files
 async function detectTechStack(repoName) {
     var username = GITHUB_SYNC_CONFIG.USERNAME;
-    var headers  = buildHeaders();
-    var stack    = [];
+    var headers = buildHeaders();
+    var stack = [];
 
     try {
         var res = await fetch(
@@ -87,18 +87,18 @@ async function detectTechStack(repoName) {
         var files = await res.json();
         if (!Array.isArray(files)) return stack;
 
-        var names = files.map(function(f) { return f.name; });
+        var names = files.map(function (f) { return f.name; });
 
-        if (names.indexOf('package.json') >= 0)                    stack.push('Node.js');
+        if (names.indexOf('package.json') >= 0) stack.push('Node.js');
         if (names.indexOf('requirements.txt') >= 0 ||
-            names.indexOf('pyproject.toml')   >= 0)                stack.push('Python');
+            names.indexOf('pyproject.toml') >= 0) stack.push('Python');
         if (names.indexOf('pom.xml') >= 0 ||
-            names.indexOf('build.gradle') >= 0)                    stack.push('Java');
-        if (names.some(function(n) { return n.endsWith('.csproj'); }) ||
-            names.indexOf('ProjectSettings') >= 0)                 stack.push('Unity/C#');
-        if (names.some(function(n) { return n.endsWith('.html'); })) stack.push('Web');
+            names.indexOf('build.gradle') >= 0) stack.push('Java');
+        if (names.some(function (n) { return n.endsWith('.csproj'); }) ||
+            names.indexOf('ProjectSettings') >= 0) stack.push('Unity/C#');
+        if (names.some(function (n) { return n.endsWith('.html'); })) stack.push('Web');
         if (names.indexOf('Dockerfile') >= 0 ||
-            names.indexOf('docker-compose.yml') >= 0)              stack.push('Docker');
+            names.indexOf('docker-compose.yml') >= 0) stack.push('Docker');
     } catch (e) {
         // ignore — empty or inaccessible repo
     }
@@ -108,7 +108,7 @@ async function detectTechStack(repoName) {
 // Fetch languages used in a repo
 async function fetchRepoLanguages(repoName) {
     var username = GITHUB_SYNC_CONFIG.USERNAME;
-    var headers  = buildHeaders();
+    var headers = buildHeaders();
     try {
         var res = await fetch(
             'https://api.github.com/repos/' + username + '/' + repoName + '/languages',
@@ -125,12 +125,25 @@ async function fetchRepoLanguages(repoName) {
 // Save sync status to Supabase
 async function saveSyncStatus(status, errorMessage) {
     var supabase = getSupabase();
-    await supabase.from('sync_status').upsert({
-        id:            1,
-        last_sync:     new Date().toISOString(),
-        status:        status,
-        error_message: errorMessage || null
-    }, { onConflict: 'id' });
+    try {
+        var result = await supabase.from('sync_status').select('id').limit(1).maybeSingle();
+        if (result.data) {
+            await supabase.from('sync_status').update({
+                last_sync: new Date().toISOString(),
+                status: status,
+                error_message: errorMessage || null
+            }).eq('id', result.data.id);
+        } else {
+            await supabase.from('sync_status').insert({
+                id: 1, // Explicitly set ID for the first row
+                last_sync: new Date().toISOString(),
+                status: status,
+                error_message: errorMessage || null
+            });
+        }
+    } catch (e) {
+        console.error('Error saving sync status:', e);
+    }
 }
 
 // Read sync status from Supabase
@@ -146,8 +159,8 @@ async function getSyncStatus() {
 
 // Main sync function — called from admin panel
 async function runGitHubSync(onProgress) {
-    var supabase  = getSupabase();
-    var username  = GITHUB_SYNC_CONFIG.USERNAME;
+    var supabase = getSupabase();
+    var username = GITHUB_SYNC_CONFIG.USERNAME;
 
     if (!username) throw new Error('GitHub username is not set.');
 
@@ -169,14 +182,14 @@ async function runGitHubSync(onProgress) {
 
     for (var i = 0; i < repos.length; i++) {
         var repo = repos[i];
-        var pct  = 15 + Math.round((i / repos.length) * 80);
-        onProgress && onProgress('Syncing: ' + repo.name + ' (' + (i+1) + '/' + repos.length + ')', pct);
+        var pct = 15 + Math.round((i / repos.length) * 80);
+        onProgress && onProgress('Syncing: ' + repo.name + ' (' + (i + 1) + '/' + repos.length + ')', pct);
 
         try {
             // Check for existing project with manual override
             var existResult = await supabase
                 .from('projects')
-                .select('id, manual_override, display_order, is_featured, updated_at, language, tech_stack')
+                .select('id, title, description, manual_override, display_order, is_featured, updated_at, language, tech_stack')
                 .eq('github_id', repo.id)
                 .maybeSingle();
             var existing = existResult.data;
@@ -200,18 +213,21 @@ async function runGitHubSync(onProgress) {
             }
 
             var payload = {
-                github_id:       repo.id,
-                title:           formatRepoTitle(repo.name),
-                description:     repo.description || 'No description provided.',
-                github_url:      repo.html_url,
-                link:            repo.homepage   || null,
-                updated_at:      repo.updated_at,
-                language:        mainLanguage,
-                is_github:       true,
-                display_order:   existing ? existing.display_order  : 0,
-                is_featured:     existing ? existing.is_featured  : false,
+                github_id: repo.id,
+                title: existing && existing.manual_override ? existing.title : formatRepoTitle(repo.name),
+                description: existing && existing.manual_override ? existing.description : (repo.description || 'No description provided.'),
+                github_url: repo.html_url,
+                link: repo.homepage || null,
+                updated_at: repo.updated_at,
+                language: mainLanguage,
+                languages: await fetchRepoLanguages(repo.name),
+                stars: repo.stargazers_count,
+                forks: repo.forks_count,
+                is_github: true,
+                display_order: existing ? existing.display_order : 0,
+                is_featured: existing ? existing.is_featured : false,
                 manual_override: existing ? existing.manual_override : false,
-                gradient:        LANG_GRADIENT_MAP[repo.language] || LANG_GRADIENT_MAP['default']
+                gradient: LANG_GRADIENT_MAP[repo.language] || LANG_GRADIENT_MAP['default']
             };
 
             if (techStack !== undefined) payload.tech_stack = techStack;
@@ -246,7 +262,10 @@ async function runGitHubSync(onProgress) {
 
     var finalStatus = errors.length === 0 ? 'success' : (synced > 0 ? 'partial' : 'failed');
     await saveSyncStatus(finalStatus, errors.slice(0, 5).join('; ') || null);
+
     onProgress && onProgress('Done! ' + synced + ' of ' + repos.length + ' repos synced.', 100);
 
     return { synced: synced, total: repos.length, errors: errors };
 }
+
+
