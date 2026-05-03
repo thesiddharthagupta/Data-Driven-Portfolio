@@ -14,10 +14,12 @@ CREATE TABLE IF NOT EXISTS projects (
     github_url       TEXT,
     homepage_url     TEXT,
     readme_url       TEXT,
-    last_updated     TIMESTAMP WITH TIME ZONE,
     languages        TEXT[],
     stars            INTEGER DEFAULT 0,
     forks            INTEGER DEFAULT 0,
+    display_order    INTEGER DEFAULT 0,
+    updated_at       TIMESTAMP WITH TIME ZONE,
+    is_featured      BOOLEAN DEFAULT false,
     gradient         TEXT DEFAULT 'gradient-1',
     is_pinned        BOOLEAN DEFAULT false,
     is_hidden        BOOLEAN DEFAULT false,
@@ -56,8 +58,13 @@ BEGIN
         ALTER TABLE projects ADD COLUMN readme_url TEXT;
     END IF;
 
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='projects' AND column_name='last_updated') THEN
-        ALTER TABLE projects ADD COLUMN last_updated TIMESTAMP WITH TIME ZONE;
+    -- Ensure updated_at exists (renamed from last_updated)
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='projects' AND column_name='updated_at') THEN
+        IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='projects' AND column_name='last_updated') THEN
+            ALTER TABLE projects RENAME COLUMN last_updated TO updated_at;
+        ELSE
+            ALTER TABLE projects ADD COLUMN updated_at TIMESTAMP WITH TIME ZONE;
+        END IF;
     END IF;
 
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='projects' AND column_name='languages') THEN
@@ -79,20 +86,61 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='projects' AND column_name='github_id') THEN
         ALTER TABLE projects ADD COLUMN github_id BIGINT;
     END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='projects' AND column_name='thumbnail') THEN
+        ALTER TABLE projects ADD COLUMN thumbnail TEXT;
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='projects' AND column_name='link') THEN
+        ALTER TABLE projects ADD COLUMN link TEXT;
+    END IF;
 END
 $$;
 
 -- 3. Create sync_status table if it does not exist
 CREATE TABLE IF NOT EXISTS sync_status (
-    id            INTEGER PRIMARY KEY,
+    id            INTEGER PRIMARY KEY DEFAULT 1,
     last_sync     TIMESTAMP WITH TIME ZONE,
     status        TEXT,
     error_message TEXT
 );
 
+-- ── PORTFOLIO DATA (Global Settings) ──
+CREATE TABLE IF NOT EXISTS portfolio_data (
+    id          INTEGER PRIMARY KEY DEFAULT 1,
+    content     JSONB NOT NULL,
+    updated_at  TIMESTAMP WITH TIME ZONE DEFAULT now()
+);
+
+ALTER TABLE portfolio_data ENABLE ROW LEVEL SECURITY;
+
+-- Policies for portfolio_data
+DROP POLICY IF EXISTS "portfolio_data_select_public" ON portfolio_data;
+DROP POLICY IF EXISTS "portfolio_data_update_admin" ON portfolio_data;
+DROP POLICY IF EXISTS "portfolio_data_insert_admin" ON portfolio_data;
+CREATE POLICY "portfolio_data_select_public" ON portfolio_data FOR SELECT USING (true);
+CREATE POLICY "portfolio_data_update_admin" ON portfolio_data FOR UPDATE USING (auth.role() = 'authenticated');
+CREATE POLICY "portfolio_data_insert_admin" ON portfolio_data FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+
+
+-- ── ADMIN ACTIVITY LOGS ──
+CREATE TABLE IF NOT EXISTS admin_logs (
+    id          UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    action      TEXT NOT NULL,
+    details     JSONB,
+    created_at  TIMESTAMP WITH TIME ZONE DEFAULT now()
+);
+
+ALTER TABLE admin_logs ENABLE ROW LEVEL SECURITY;
+
+-- Only Admin can read/insert logs
+DROP POLICY IF EXISTS "admin_logs_auth_all" ON admin_logs;
+CREATE POLICY "admin_logs_auth_all" ON admin_logs FOR ALL USING (auth.role() = 'authenticated');
+
 -- 4. Enable Row Level Security
 ALTER TABLE projects    ENABLE ROW LEVEL SECURITY;
 ALTER TABLE sync_status ENABLE ROW LEVEL SECURITY;
+ALTER TABLE admin_logs  ENABLE ROW LEVEL SECURITY;
 
 -- 5. Public read policies (portfolio page can read projects)
 DROP POLICY IF EXISTS "projects_public_read"    ON projects;
