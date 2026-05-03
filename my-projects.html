@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Projects | Siddharth Gupta</title>
+    <meta name="description" content="Explore all my technical projects, repositories, and digital builds.">
+    
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>👨‍💻</text></svg>">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+    <script src="supabase-init.js"></script>
+</head>
+<body class="projects-page">
+
+    <!-- Navigation -->
+    <nav class="navbar scrolled"> <!-- Always scrolled on subpages -->
+        <div class="nav-container">
+            <a href="index.html" class="logo">Siddharth<span>.</span></a>
+            <ul class="nav-links">
+                <li><a href="index.html#home" class="nav-link">Home</a></li>
+                <li><a href="index.html#projects" class="nav-link active">Projects</a></li>
+                <li><a href="index.html#contact" class="nav-link">Contact</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <section class="projects-hero">
+        <div class="container">
+            <h1 class="section-title">All <span>Projects</span></h1>
+            <p class="section-subtitle">A comprehensive archive of my technical journey, from open-source contributions to personal experiments.</p>
+            
+            <div class="project-filters-row">
+                <div class="search-wrap">
+                    <input type="text" id="project-search" placeholder="Search projects by name or technology...">
+                </div>
+            </div>
+
+            <div class="project-grid" id="all-projects-grid">
+                <!-- Loaded via JS -->
+                <div class="loading-spinner-wrap">
+                    <div class="spinner"></div>
+                    <p>Loading projects...</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <p id="footer-text-display"></p>
+        <p class="footer-built">Built with ❤️ using HTML, CSS & JS</p>
+    </footer>
+
+    <script src="data.js"></script>
+    <script>
+        // Inline script for My Projects page
+        document.addEventListener('DOMContentLoaded', async () => {
+            const grid = document.getElementById('all-projects-grid');
+            const searchInput = document.getElementById('project-search');
+            let allProjects = [];
+
+            async function loadAllProjects() {
+                try {
+                    const supabase = getSupabase();
+                    const { data: projects, error } = await supabase
+                        .from('projects')
+                        .select('*')
+                        .neq('display_order', -1)
+                        .order('is_featured', { ascending: false })
+                        .order('updated_at', { ascending: false });
+
+                    if (error) throw error;
+                    allProjects = projects || [];
+                    renderProjects(allProjects);
+                } catch (e) {
+                    console.error('Error loading projects:', e);
+                    grid.innerHTML = '<p class="error">Failed to load projects. Please try again later.</p>';
+                }
+            }
+
+            function renderProjects(items) {
+                if (items.length === 0) {
+                    grid.innerHTML = '<p class="no-projects">No projects found matching your criteria.</p>';
+                    return;
+                }
+
+                grid.innerHTML = items.map(project => {
+                    const techStack = project.tech_stack || [];
+                    const mainLang = project.language || (techStack.length > 0 ? techStack[0] : '');
+                    const langColor = {
+                        'Python': '#3572A5', 'C': '#555555', 'C#': '#178600', 'C++': '#f34b7d',
+                        'Java': '#b07219', 'JavaScript': '#f1e05a', 'CSS': '#563d7c',
+                        'HTML': '#e34c26', 'Markdown': '#083fa1'
+                    }[mainLang] || '#6366f1';
+
+                    const langBadge = mainLang ? `<span class="lang-badge" style="background:${langColor}22; color:${langColor}; border:1px solid ${langColor}44;">● ${mainLang}</span>` : '';
+                    const githubLink = project.github_url || '#';
+                    const liveLink = project.link || project.github_url || '#';
+                    const isLive = !!project.link;
+                    
+                    // Support for thumbnail if it exists in DB (even if not in migration yet)
+                    const thumbnail = project.thumbnail || null;
+
+                    return `
+                        <div class="project-card" onclick="window.open('${liveLink}', '_blank')" style="cursor: pointer;">
+                            <div class="project-img-placeholder ${project.gradient || 'gradient-1'}">
+                                ${thumbnail ? `<img src="${thumbnail}" alt="${project.title}" style="width:100%; height:100%; object-fit:cover;">` : ''}
+                                <div class="project-overlay">
+                                    <a href="${githubLink}" class="project-overlay-btn" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">View Code →</a>
+                                </div>
+                            </div>
+                            <div class="project-info">
+                                <div class="project-header-row">
+                                    <h3>${project.title}</h3>
+                                    ${langBadge}
+                                </div>
+                                <p>${project.description}</p>
+                                <div class="project-tags">
+                                    ${techStack.slice(0, 3).map(tag => `<span class="tag">${tag}</span>`).join('')}
+                                </div>
+                                <div style="display: flex; gap: 10px; align-items: center; margin-top: auto;">
+                                    <a href="${liveLink}" class="view-link" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">${isLive ? 'Live Demo →' : 'View Project →'}</a>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            // Search logic
+            searchInput.addEventListener('input', (e) => {
+                const term = e.target.value.toLowerCase();
+                const filtered = allProjects.filter(p => 
+                    p.title.toLowerCase().includes(term) || 
+                    (p.description && p.description.toLowerCase().includes(term)) ||
+                    (p.tech_stack && p.tech_stack.some(t => t.toLowerCase().includes(term)))
+                );
+                renderProjects(filtered);
+            });
+
+            // Set footer text
+            const data = await getData();
+            if (data && data.footer) {
+                document.getElementById('footer-text-display').textContent = data.footer.copyrightText || '';
+            }
+
+            loadAllProjects();
+        });
+    </script>
+</body>
+</html>
