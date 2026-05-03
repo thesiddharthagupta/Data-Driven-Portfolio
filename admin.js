@@ -8,7 +8,7 @@ let cropper = null;
 // ── Initialization ───────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
     const supabase = getSupabase();
-    
+
     // Check initial session as requested
     const { data: { session } } = await supabase.auth.getSession();
     if (session) {
@@ -26,6 +26,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     initLogin();
     initNavigation();
 });
+
+async function getAuthHeaders() {
+    const { data: { session } } = await getSupabase().auth.getSession();
+    return {
+        'Authorization': `Bearer ${session?.access_token}`,
+        'Content-Type': 'application/json'
+    };
+}
 
 async function showDashboard() {
     currentData = await getData();
@@ -62,7 +70,7 @@ function showLogin() {
 let inactivityTimer;
 function initInactivityTimer() {
     const timeoutDuration = 15 * 60 * 1000; // 15 minutes
-    
+
     function resetTimer() {
         clearTimeout(inactivityTimer);
         inactivityTimer = setTimeout(async () => {
@@ -128,11 +136,11 @@ async function uploadFile(file, bucket, path) {
         });
 
     if (error) throw error;
-    
+
     const { data: { publicUrl } } = supabase.storage
         .from(bucket)
         .getPublicUrl(path);
-        
+
     return publicUrl;
 }
 
@@ -155,10 +163,25 @@ function initNavigation() {
 
             // Lazy-load data for dynamic sections
             if (sectionId === 'projects') loadProjects();
-            if (sectionId === 'sync')     updateSyncUI();
+            if (sectionId === 'sync') updateSyncUI();
             if (sectionId === 'messages') loadMessages();
+            if (sectionId === 'activity') loadActivityLogs();
+
+            // Close sidebar on mobile after selection
+            if (window.innerWidth <= 992) {
+                document.getElementById('sidebar').classList.remove('active');
+            }
         });
     });
+
+    // Sidebar toggle for mobile
+    const sidebarToggle = document.getElementById('sidebar-toggle');
+    const sidebar = document.getElementById('sidebar');
+    if (sidebarToggle) {
+        sidebarToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('active');
+        });
+    }
 }
 
 // ── Load Dashboard Data ──────────────────────
@@ -181,6 +204,10 @@ function loadDashboard() {
     // About
     document.getElementById('about-bio1').value = currentData.about.bio1 || '';
     document.getElementById('about-bio2').value = currentData.about.bio2 || '';
+    document.getElementById('about-location').value = currentData.about.location || '';
+    document.getElementById('about-edu').value = currentData.about.education || '';
+    document.getElementById('about-availability').value = currentData.about.availability || '';
+    document.getElementById('about-email').value = currentData.about.email || '';
 
     // Contact & Socials
     document.getElementById('contact-email-admin').value = currentData.contact.email || '';
@@ -198,6 +225,14 @@ function loadDashboard() {
     loadEducation();
     loadExperience();
     loadCertifications();
+
+    // GitHub Sync Credentials (stored in browser)
+    const usernameInput = document.getElementById('sync-username');
+    const tokenInput = document.getElementById('sync-token');
+    if (usernameInput) usernameInput.value = localStorage.getItem('gh_sync_username') || '';
+    if (tokenInput) tokenInput.value = localStorage.getItem('gh_sync_token') || '';
+
+    updateSyncUI();
 }
 
 // ── General Settings ─────────────────────────
@@ -206,7 +241,11 @@ async function saveGeneral() {
     currentData.general.pageTitle = document.getElementById('gen-page-title').value;
     currentData.general.tagline = document.getElementById('gen-tagline').value;
     currentData.general.typingTitles = document.getElementById('gen-typing-titles').value.split('\n').filter(t => t.trim());
-    await persistData();
+    const prev = await persistData();
+    await logActivity('Updated General Settings', {
+        name: currentData.general.name,
+        tagline: currentData.general.tagline
+    }, prev);
 }
 
 // ── Profile Photo & Cropper ──────────────────
@@ -223,12 +262,12 @@ function handlePhotoUpload(event) {
     reader.onload = (e) => {
         const modal = document.getElementById('cropper-modal');
         const img = document.getElementById('cropper-image');
-        
+
         img.src = e.target.result;
         modal.style.display = 'block';
 
         if (cropper) cropper.destroy();
-        
+
         img.onload = () => {
             cropper = new Cropper(img, {
                 aspectRatio: 1,
@@ -259,7 +298,7 @@ function closeCropper() {
 
 async function applyCrop() {
     const canvas = cropper.getCroppedCanvas({ width: 400, height: 400 });
-    
+
     canvas.toBlob(async (blob) => {
         try {
             showToast('Uploading photo...');
@@ -307,7 +346,10 @@ async function handleResumeUpload(event) {
         currentData.profile.resumeFile = publicUrl;
         currentData.profile.resumeName = file.name;
         document.getElementById('resume-file-name').textContent = '📄 ' + file.name;
-        showToast('Resume uploaded!');
+
+        // Auto-save the new resume data
+        await persistData();
+        showToast('Resume uploaded and saved!');
     } catch (e) {
         alert('Upload failed: ' + e.message);
     }
@@ -316,8 +358,12 @@ async function handleResumeUpload(event) {
 async function saveProfile() {
     currentData.profile.fallbackEmoji = document.getElementById('profile-fallback-emoji').value;
     currentData.profile.resumeUrl = document.getElementById('resume-url').value;
-    await persistData();
+    const prev = await persistData();
     updatePhotoPreview();
+    await logActivity('Updated Profile Settings', {
+        fallbackEmoji: currentData.profile.fallbackEmoji,
+        resumeUrl: currentData.profile.resumeUrl
+    }, prev);
 }
 
 async function clearResume() {
@@ -331,7 +377,7 @@ async function clearResume() {
     }
 }
 
-// ── Certifications ────────────────────────
+// ── Achievements ────────────────────────
 function loadCertifications() {
     const list = document.getElementById('certifications-list');
     if (!list) return;
@@ -341,11 +387,11 @@ function loadCertifications() {
         item.className = 'form-card';
         item.innerHTML = `
             <div class="field-group">
-                <label>Title</label>
+                <label>Achievement Title</label>
                 <input type="text" value="${escapeAdminHTML(cert.title)}" onchange="currentData.certifications[${index}].title=this.value">
             </div>
             <div class="field-group">
-                <label>Issuer</label>
+                <label>Issuer / Context</label>
                 <input type="text" value="${escapeAdminHTML(cert.issuer)}" onchange="currentData.certifications[${index}].issuer=this.value">
             </div>
             <div class="field-group">
@@ -353,10 +399,10 @@ function loadCertifications() {
                 <input type="text" value="${escapeAdminHTML(cert.date)}" onchange="currentData.certifications[${index}].date=this.value">
             </div>
             <div class="field-group">
-                <label>Certificate Link</label>
+                <label>Verification Link (Optional)</label>
                 <input type="text" value="${escapeAdminHTML(cert.link)}" onchange="currentData.certifications[${index}].link=this.value">
             </div>
-            <button class="btn-admin btn-danger-admin" onclick="deleteCertification(${index})">Delete</button>
+            <button class="btn-admin btn-danger-admin" onclick="deleteCertification(${index})">Delete Achievement</button>
         `;
         list.appendChild(item);
     });
@@ -364,7 +410,7 @@ function loadCertifications() {
 
 function addCertification() {
     if (!currentData.certifications) currentData.certifications = [];
-    currentData.certifications.push({ title: "New Certification", issuer: "", date: "", link: "#" });
+    currentData.certifications.push({ title: "New Achievement", issuer: "", date: "", link: "#" });
     loadCertifications();
 }
 
@@ -374,15 +420,21 @@ function deleteCertification(index) {
 }
 
 async function saveCertifications() {
-    await saveData(currentData);
-    showToast('Certifications saved!');
+    const prev = await persistData();
+    await logActivity('Updated Achievements', { count: currentData.certifications.length }, prev);
 }
 
 // ── Skills ─────────────────────────────────
 async function saveAbout() {
     currentData.about.bio1 = document.getElementById('about-bio1').value;
     currentData.about.bio2 = document.getElementById('about-bio2').value;
-    await persistData();
+    currentData.about.location = document.getElementById('about-location').value;
+    currentData.about.education = document.getElementById('about-edu').value;
+    currentData.about.availability = document.getElementById('about-availability').value;
+    currentData.about.email = document.getElementById('about-email').value;
+
+    const prev = await persistData();
+    await logActivity('Updated About Info', { bio1: currentData.about.bio1.substring(0, 30) + '...' }, prev);
 }
 
 // ── Dynamic List Managers ────────────────────
@@ -402,14 +454,18 @@ function loadEducation() {
         `;
     });
 }
-function addEducation() { 
+function addEducation() {
     if (!currentData.education) currentData.education = [];
-    currentData.education.push({ school: 'New University', degree: 'Degree Name', duration: '2024 - 2028', description: '' }); 
-    loadEducation(); 
+    currentData.education.push({ school: 'New University', degree: 'Degree Name', duration: '2024 - 2028', description: '' });
+    loadEducation();
 }
 function updateEdu(idx, key, val) { currentData.education[idx][key] = val; }
 function removeEdu(idx) { currentData.education.splice(idx, 1); loadEducation(); }
-async function saveEducation() { await persistData(); }
+async function saveEducation() {
+    const prev = await persistData();
+    const summary = currentData.education.map(e => e.school || e.degree).filter(Boolean).join(', ');
+    await logActivity('Updated Education', { list: summary }, prev);
+}
 
 function loadExperience() {
     const list = document.getElementById('experience-list');
@@ -426,14 +482,18 @@ function loadExperience() {
         `;
     });
 }
-function addExperience() { 
+function addExperience() {
     if (!currentData.experience) currentData.experience = [];
-    currentData.experience.push({ company: 'Company Name', role: 'Role Name', duration: '2024 - Present', description: '' }); 
-    loadExperience(); 
+    currentData.experience.push({ company: 'Company Name', role: 'Role Name', duration: '2024 - Present', description: '' });
+    loadExperience();
 }
 function updateExp(idx, key, val) { currentData.experience[idx][key] = val; }
 function removeExp(idx) { currentData.experience.splice(idx, 1); loadExperience(); }
-async function saveExperience() { await persistData(); }
+async function saveExperience() {
+    const prev = await persistData();
+    const summary = currentData.experience.map(e => e.title || e.company).filter(Boolean).join(', ');
+    await logActivity('Updated Experience', { list: summary }, prev);
+}
 
 function loadSkills() {
     const list = document.getElementById('skills-list');
@@ -451,7 +511,11 @@ function loadSkills() {
 function addSkill() { currentData.about.skills.push({ title: 'Skill Name', description: 'Tech detail' }); loadSkills(); }
 function updateSkill(idx, key, val) { currentData.about.skills[idx][key] = val; }
 function removeSkill(idx) { currentData.about.skills.splice(idx, 1); loadSkills(); }
-async function saveSkills() { await persistData(); }
+async function saveSkills() {
+    const prev = await persistData();
+    const summary = currentData.about.skills.map(s => s.title).filter(Boolean).join(', ');
+    await logActivity('Updated Skills', { list: summary }, prev);
+}
 
 // ── Project Management (Supabase-Direct) ──
 
@@ -477,21 +541,33 @@ async function loadProjects() {
 
         grid.innerHTML = projects.map(proj => {
             const isHidden = proj.display_order === -1;
+            const projJson = JSON.stringify(proj).replace(/'/g, "&#39;");
+            
+            const thumbDisplay = proj.thumbnail 
+                ? `<div class="project-admin-thumb-wrap">
+                     <img src="${proj.thumbnail}" class="project-admin-thumb">
+                     <button class="thumb-edit-overlay" onclick='openProjectEditModal(${projJson})'>Change Image</button>
+                   </div>`
+                : `<div class="project-admin-thumb-empty" onclick='openProjectEditModal(${projJson})'>
+                     <span>📸 Add Thumbnail</span>
+                   </div>`;
+
             return `
-            <div class="project-admin-card ${isHidden ? 'opacity: 0.5;' : ''}" id="proj-${proj.id}" style="${isHidden ? 'opacity:0.5;' : ''}">
+            <div class="project-admin-card" id="proj-${proj.id}" style="${isHidden ? 'opacity:0.6;' : ''}">
                 <div class="project-admin-header">
                     <h4>${escapeAdminHTML(proj.title)}</h4>
                     <div class="project-admin-actions">
+                        <button class="btn-icon-admin" onclick='openProjectEditModal(${projJson})' title="Edit project details">📝</button>
                         <button class="btn-icon-admin ${proj.is_featured ? 'active' : ''}" onclick="togglePin('${proj.id}', ${proj.is_featured})" title="${proj.is_featured ? 'Unpin' : 'Pin'} project">📌</button>
                         <button class="btn-icon-admin ${isHidden ? 'active' : ''}" onclick="toggleHide('${proj.id}', ${isHidden})" title="${isHidden ? 'Show' : 'Hide'} project">${isHidden ? '🙈' : '👁️'}</button>
                         <button class="btn-icon-admin" onclick="deleteProject('${proj.id}')" title="Delete project" style="color:#f87171;">🗑️</button>
                     </div>
                 </div>
+                ${thumbDisplay}
                 <p class="project-admin-desc">${escapeAdminHTML(proj.description || 'No description.')}</p>
                 <div class="project-admin-footer">
                     <div class="project-tags">
-                        ${(proj.tech_stack || []).map(t => `<span class="tag">${t}</span>`).join('')}
-                        ${proj.is_featured ? '<span class="tag" style="background:rgba(99,102,241,0.15);color:#818cf8;">Featured</span>' : ''}
+                        ${(proj.tech_stack || []).slice(0, 3).map(t => `<span class="tag">${t}</span>`).join('')}
                     </div>
                     ${proj.github_url ? `<a href="${proj.github_url}" target="_blank" class="btn-icon-admin" title="View on GitHub">🔗</a>` : ''}
                 </div>
@@ -504,12 +580,15 @@ async function loadProjects() {
 }
 
 function escapeAdminHTML(str) {
-    return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 async function togglePin(id, current) {
     const supabase = getSupabase();
-    const { error } = await supabase.from('projects').update({ is_featured: !current }).eq('id', id);
+    const { error } = await supabase.from('projects').update({
+        is_featured: !current,
+        updated_at: new Date()
+    }).eq('id', id);
     if (error) return showToast('Error: ' + error.message);
     loadProjects();
     showToast(current ? 'Project unpinned' : 'Project pinned 📌');
@@ -517,7 +596,10 @@ async function togglePin(id, current) {
 
 async function toggleHide(id, current) {
     const supabase = getSupabase();
-    const { error } = await supabase.from('projects').update({ display_order: current ? 0 : -1 }).eq('id', id);
+    const { error } = await supabase.from('projects').update({
+        display_order: current ? 0 : -1,
+        updated_at: new Date()
+    }).eq('id', id);
     if (error) return showToast('Error: ' + error.message);
     loadProjects();
     showToast(current ? 'Project visible again' : 'Project hidden');
@@ -535,14 +617,15 @@ async function deleteProject(id) {
 async function addProject() {
     const supabase = getSupabase();
     const { error } = await supabase.from('projects').insert({
-        github_id:   Date.now(), // temp unique ID for manual projects
-        title:       'New Project',
+        github_id: Date.now(), // temp unique ID for manual projects
+        title: 'New Project',
         description: 'Project description…',
-        github_url:  '#',
-        tech_stack:  [],
+        github_url: '#',
+        tech_stack: [],
         is_featured: false,
         display_order: 0,
-        manual_override: true
+        manual_override: true,
+        updated_at: new Date()
     });
     if (error) return showToast('Error: ' + error.message);
     loadProjects();
@@ -559,33 +642,142 @@ function filterProjects(type) {
     cards.forEach(card => {
         const isHidden = card.style.opacity === '0.5';
         const isPinned = card.querySelector('.btn-icon-admin.active[title*="Unpin"]');
-        if (type === 'all')    card.style.display = '';
+        if (type === 'all') card.style.display = '';
         if (type === 'hidden') card.style.display = isHidden ? '' : 'none';
         if (type === 'pinned') card.style.display = isPinned ? '' : 'none';
     });
 }
 
+// ── Project Modal Logic ──────────────────
+
+function openProjectEditModal(proj) {
+    const modal = document.getElementById('project-edit-modal');
+    document.getElementById('edit-project-id').value = proj.id;
+    document.getElementById('edit-project-title').value = proj.title || '';
+    document.getElementById('edit-project-desc').value = proj.description || '';
+    document.getElementById('edit-project-link').value = proj.link || proj.homepage_url || '';
+    document.getElementById('edit-project-thumb-url').value = proj.thumbnail || '';
+
+    updateThumbPreview(proj.thumbnail);
+    modal.style.display = 'block';
+}
+
+function closeProjectModal() {
+    document.getElementById('project-edit-modal').style.display = 'none';
+}
+
+function updateThumbPreview(url) {
+    const preview = document.getElementById('edit-project-thumb-preview');
+    if (url) {
+        preview.innerHTML = `<img src="${url}" style="width:100%; height:100%; object-fit:cover;">`;
+    } else {
+        preview.innerHTML = `<span style="color: var(--text-muted); font-size: 0.8rem;">No Image</span>`;
+    }
+}
+
+async function handleThumbnailUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    try {
+        showToast('Uploading thumbnail...');
+        const publicUrl = await uploadFile(file, 'portfolio-assets', `projects/${Date.now()}-${file.name}`);
+        document.getElementById('edit-project-thumb-url').value = publicUrl;
+        updateThumbPreview(publicUrl);
+        showToast('Thumbnail uploaded!');
+    } catch (e) {
+        showToast('Upload failed: ' + e.message, 'error');
+    }
+}
+
+async function saveProjectEdit() {
+    const id = document.getElementById('edit-project-id').value;
+    const payload = {
+        title: document.getElementById('edit-project-title').value,
+        description: document.getElementById('edit-project-desc').value,
+        link: document.getElementById('edit-project-link').value,
+        homepage_url: document.getElementById('edit-project-link').value, // Dual support
+        thumbnail: document.getElementById('edit-project-thumb-url').value,
+        manual_override: true, 
+        updated_at: new Date().toISOString()
+    };
+
+    try {
+        const supabase = getSupabase();
+        const { error } = await supabase
+            .from('projects')
+            .update(payload)
+            .eq('id', id);
+
+        if (error) throw error;
+
+        showToast('Project updated successfully!');
+        closeProjectModal();
+        loadProjects();
+        await logActivity('Edited Project Details', { title: payload.title, id: id });
+    } catch (e) {
+        console.error('Save error:', e);
+        alert('SAVE FAILED: ' + e.message + '\n\nIf the error mentions a missing column, please run the SQL in migration.sql in your Supabase dashboard.');
+        showToast('Save failed: ' + e.message, 'error');
+    }
+}
+
 // ── GitHub Sync (Client-Side) ──
 
 async function triggerSync() {
-    const btn   = document.getElementById('trigger-sync-btn');
-    const wrap  = document.getElementById('sync-progress-wrap');
-    const bar   = document.getElementById('sync-progress-bar');
+    const btn = document.getElementById('trigger-sync-btn');
+    const wrap = document.getElementById('sync-progress-wrap');
+    const bar = document.getElementById('sync-progress-bar');
     const label = document.getElementById('sync-progress-label');
     const errBox = document.getElementById('sync-error-box');
 
-    // Load credentials from inputs
-    const username = (document.getElementById('sync-username')?.value || '').trim();
-    const token    = (document.getElementById('sync-token')?.value || '').trim();
-    if (!username) { showToast('Enter your GitHub username first'); return; }
-    setGitHubCredentials(username, token);
-
-    // Reset UI
+    // 1. Try Server-Side Sync first (More reliable, avoids IP rate limits)
     btn.disabled = true;
-    btn.textContent = '⏳ Syncing…';
+    btn.textContent = '⏳ Requesting Server Sync…';
     wrap.style.display = 'block';
-    bar.style.width = '0%';
+    bar.style.width = '20%';
+    label.textContent = 'Contacting server...';
     errBox.style.display = 'none';
+
+    try {
+        const headers = await getAuthHeaders();
+        const response = await fetch('/api/sync-now', {
+            method: 'POST',
+            headers: headers
+        });
+        if (response.ok) {
+            bar.style.width = '100%';
+            label.textContent = '✅ Server sync started in background! Status will update in a few seconds.';
+            showToast('Server sync triggered!', 'success');
+
+            // Wait and refresh
+            setTimeout(async () => {
+                await updateSyncUI();
+                loadProjects();
+                btn.disabled = false;
+                btn.textContent = '🚀 Sync Now';
+                setTimeout(() => { wrap.style.display = 'none'; }, 2000);
+            }, 3000);
+            return;
+        }
+    } catch (e) {
+        console.warn('Server sync unavailable, falling back to browser sync.');
+    }
+
+    // 2. Fallback to Client-Side Sync
+    const username = (document.getElementById('sync-username')?.value || '').trim();
+    const token = (document.getElementById('sync-token')?.value || '').trim();
+    if (!username) {
+        showToast('Enter your GitHub username first', 'error');
+        btn.disabled = false;
+        btn.textContent = '🚀 Sync Now';
+        wrap.style.display = 'none';
+        return;
+    }
+
+    setGitHubCredentials(username, token);
+    btn.textContent = '⏳ Browser Syncing…';
+    bar.style.width = '30%';
 
     try {
         const result = await runGitHubSync((message, pct) => {
@@ -594,14 +786,15 @@ async function triggerSync() {
         });
 
         bar.style.width = '100%';
-        label.textContent = `✅ Done! Synced ${result.synced} of ${result.total} repositories.`;
+        label.textContent = `✅ Done! Synced ${result.synced} repositories.`;
 
         if (result.errors.length > 0) {
             errBox.style.display = 'block';
             errBox.textContent = 'Partial errors: ' + result.errors.slice(0, 3).join(' | ');
         }
 
-        showToast(`Sync complete! ${result.synced} repos synced.`);
+        showToast(`Sync complete! ${result.synced} repos synced.`, 'success');
+        await logActivity('GitHub Sync Performed (Browser)', { synced: result.synced, total: result.total });
         await updateSyncUI();
         loadProjects();
 
@@ -611,26 +804,25 @@ async function triggerSync() {
         label.textContent = '❌ Sync failed: ' + e.message;
         errBox.style.display = 'block';
         errBox.textContent = e.message;
-        showToast('Sync failed: ' + e.message);
+        showToast('Sync failed: ' + e.message, 'error');
     } finally {
         btn.disabled = false;
         btn.textContent = '🚀 Sync Now';
-        // Hide progress bar after 5s
         setTimeout(() => { wrap.style.display = 'none'; bar.style.background = 'linear-gradient(90deg,#6366f1,#ec4899)'; }, 5000);
     }
 }
 
 async function updateSyncUI() {
-    const badge    = document.getElementById('sync-status-badge');
-    const timeEl   = document.getElementById('sync-last-time');
-    const countEl  = document.getElementById('sync-repo-count');
+    const badge = document.getElementById('sync-status-badge');
+    const timeEl = document.getElementById('sync-last-time');
+    const countEl = document.getElementById('sync-repo-count');
     if (!badge) return;
 
     try {
         const status = await getSyncStatus();
         badge.textContent = status.status || 'never';
-        badge.className   = 'badge ' + (status.status || '');
-        timeEl.textContent  = status.last_sync ? new Date(status.last_sync).toLocaleString() : 'Never';
+        badge.className = 'badge ' + (status.status || '');
+        timeEl.textContent = status.last_sync ? new Date(status.last_sync).toLocaleString() : 'Never';
 
         // Count projects
         const supabase = getSupabase();
@@ -638,18 +830,18 @@ async function updateSyncUI() {
         if (countEl) countEl.textContent = count ?? '—';
     } catch (_) {
         badge.textContent = 'error';
-        badge.className   = 'badge failed';
+        badge.className = 'badge failed';
     }
 }
 
 function saveGitHubCredentials() {
     const username = document.getElementById('sync-username')?.value.trim();
-    const token    = document.getElementById('sync-token')?.value.trim();
+    const token = document.getElementById('sync-token')?.value.trim();
     if (username) {
         setGitHubCredentials(username, token);
-        // Persist username in localStorage for convenience
         localStorage.setItem('gh_sync_username', username);
-        showToast('GitHub credentials saved for this session 👍');
+        if (token) localStorage.setItem('gh_sync_token', token);
+        showToast('GitHub credentials saved! These will persist in your browser.', 'success');
     }
 }
 
@@ -714,7 +906,7 @@ async function deleteMessage(id) {
         showToast('Message deleted');
         loadMessages();
     } catch (e) {
-        showToast('Error deleting message: ' + e.message);
+        showToast('Error deleting message: ' + e.message, 'error');
     }
 }
 async function saveSocials() {
@@ -722,20 +914,25 @@ async function saveSocials() {
     currentData.socials.linkedin = document.getElementById('social-linkedin').value;
     currentData.socials.twitter = document.getElementById('social-twitter').value;
     currentData.socials.instagram = document.getElementById('social-instagram').value;
-    await persistData();
+    const prev = await persistData();
+    await logActivity('Updated Social Links', currentData.socials, prev);
 }
 
 async function saveFooter() {
     currentData.footer.copyrightText = document.getElementById('footer-text').value;
-    await persistData();
+    const prev = await persistData();
+    await logActivity('Updated Footer Text', { copyright: currentData.footer.copyrightText }, prev);
 }
 
 // ── Core Functionality ───────────────────────
 async function persistData() {
     try {
+        // Fetch current data from DB before overwriting to save as snapshot
+        const previousData = await getData();
+
         await saveData(currentData);
-        showToast('Changes saved to Supabase!');
-        return true;
+        showToast('Changes saved to Supabase!', 'success');
+        return previousData; // Return previous state for logging
     } catch (e) {
         alert('Error saving changes: ' + e.message);
         console.error('Save error:', e);
@@ -743,11 +940,110 @@ async function persistData() {
     }
 }
 
-function showToast(msg) {
+function showToast(msg, type = 'success') {
     const toast = document.getElementById('toast');
     toast.textContent = msg;
-    toast.classList.add('show');
+    toast.className = 'toast show'; // Reset and show
+    if (type === 'error') toast.classList.add('toast-error');
+    else toast.classList.add('toast-success');
+
     setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+// ── Activity Logging & Undo ──
+
+async function logActivity(action, details, snapshot = null) {
+    try {
+        const supabase = getSupabase();
+        const payload = {
+            action,
+            details: details || {}
+        };
+        if (snapshot) payload.details.snapshot = snapshot;
+
+        const { error } = await supabase.from('admin_logs').insert(payload);
+        if (error) throw error;
+    } catch (e) {
+        console.error('Error logging activity:', e);
+    }
+}
+
+async function loadActivityLogs() {
+    const list = document.getElementById('activity-log-list');
+    if (!list) return;
+
+    list.innerHTML = '<p style="color:var(--text-muted);">Loading logs…</p>';
+    try {
+        const supabase = getSupabase();
+        const { data: logs, error } = await supabase
+            .from('admin_logs')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(100);
+
+        if (error) throw error;
+
+        if (!logs || logs.length === 0) {
+            list.innerHTML = '<p style="color:var(--text-muted);">No activity recorded yet.</p>';
+            return;
+        }
+
+        list.innerHTML = logs.map(log => {
+            const time = new Date(log.created_at).toLocaleString();
+            const hasSnapshot = log.details && log.details.snapshot;
+
+            // Clean details for display (remove snapshot)
+            const displayDetails = { ...log.details };
+            delete displayDetails.snapshot;
+
+            return `
+            <div class="activity-log-item" style="background: rgba(255,255,255,0.03); border-radius: 8px; padding: 12px; margin-bottom: 10px; border-left: 3px solid var(--accent);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <div>
+                        <strong style="color: var(--text-bright);">${escapeAdminHTML(log.action)}</strong>
+                        <span style="font-size: 0.75rem; color: var(--text-muted); margin-left: 10px;">${time}</span>
+                    </div>
+                    ${hasSnapshot ? `<button class="btn-admin btn-secondary-admin" style="padding: 4px 10px; font-size: 0.75rem; width: auto;" onclick="revertToSnapshot('${log.id}')">↩ Undo/Revert</button>` : ''}
+                </div>
+                <div style="font-size: 0.85rem; color: var(--text-muted); font-family: monospace; white-space: pre-wrap; overflow-x: auto; background: rgba(0,0,0,0.2); padding: 8px; border-radius: 4px;">
+                    ${JSON.stringify(displayDetails, null, 2)}
+                </div>
+            </div>
+        `}).join('');
+    } catch (e) {
+        console.error('Error loading logs:', e);
+        list.innerHTML = `<p style="color:#f87171;">Error loading logs: ${e.message}</p>`;
+    }
+}
+
+async function revertToSnapshot(logId) {
+    if (!confirm('Revert all settings to this previous state? This will overwrite your current changes.')) return;
+
+    try {
+        const supabase = getSupabase();
+        const { data: log, error } = await supabase
+            .from('admin_logs')
+            .select('details')
+            .eq('id', logId)
+            .single();
+
+        if (error) throw error;
+        if (!log.details.snapshot) throw new Error('No snapshot found for this log entry.');
+
+        showToast('Reverting data...', 'info');
+        const snapshot = log.details.snapshot;
+
+        await saveData(snapshot);
+
+        // Log the revert itself
+        await logActivity('Reverted to previous state', { reverted_from_log_id: logId });
+
+        showToast('Successfully reverted! Reloading dashboard...', 'success');
+        setTimeout(() => location.reload(), 1500);
+
+    } catch (e) {
+        alert('Revert failed: ' + e.message);
+    }
 }
 
 async function exportData() {
