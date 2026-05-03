@@ -5,6 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Siddharth Gupta | Portfolio</title>
     <meta name="description" content="Siddharth Gupta — CSE Student, Aspiring AI/ML Developer, and Freelance Technical Specialist. Explore my projects, skills, and journey.">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://siddharthgupta.com.np/">
+    <meta property="og:title" content="Siddharth Gupta | Data-Driven Portfolio">
+    <meta property="og:description" content="CSE Student & Technical Specialist. Check out my live synced GitHub projects and technical journey.">
+    <meta property="og:image" content="https://uflybwitdxbjnjmgdydq.supabase.co/storage/v1/object/public/portfolio-assets/og-image.png">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:title" content="Siddharth Gupta | Data-Driven Portfolio">
+    <meta property="twitter:description" content="CSE Student & Technical Specialist. Check out my live synced GitHub projects.">
+
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>👨‍💻</text></svg>">
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
@@ -37,7 +53,6 @@
                 <li><a href="#about" class="nav-link" data-section="about">About</a></li>
                 <li><a href="#resume" class="nav-link" data-section="resume">Resume</a></li>
                 <li><a href="#contact" class="nav-link" data-section="contact">Contact</a></li>
-                <li><a href="admin.html" class="admin-nav-link" title="Admin Panel">⚙</a></li>
             </ul>
         </div>
     </nav>
@@ -52,7 +67,7 @@
             <div class="hero-cta">
                 <a href="#projects" class="btn btn-primary">View My Work 🚀</a>
                 <a href="#contact" class="btn btn-secondary">Get in Touch</a>
-                <a href="#" class="btn btn-resume" id="resume-btn" download style="display:none;">
+                <a href="javascript:void(0)" class="btn btn-resume" id="resume-btn" style="display:none;">
                     <span>📄</span> Download Resume
                 </a>
             </div>
@@ -69,9 +84,6 @@
                     <img id="hero-photo-img" src="" alt="Siddharth Gupta" style="display:none; width:100%; height:100%; object-fit:cover; border-radius:50%;">
                 </div>
             </div>
-            <div class="badge badge-1">💻 CSE</div>
-            <div class="badge badge-2">🤖 AI/ML</div>
-            <div class="badge badge-3">🚀 Python</div>
         </div>
     </section>
 
@@ -115,6 +127,9 @@
                 </a>
             </div>
             <div class="project-grid" id="project-grid"></div>
+            <div class="see-more-container" id="see-more-container" style="display: none;">
+                <a href="my-projects.html" id="see-more-btn" class="btn btn-secondary">Explore All Projects →</a>
+            </div>
         </div>
     </section>
 
@@ -159,10 +174,10 @@
                     <p id="about-bio1"></p>
                     <p id="about-bio2"></p>
                     <div class="about-meta">
-                        <div class="meta-item">📍 <span>Bangalore, Karnataka, India</span></div>
-                        <div class="meta-item">🎓 <span>B.Tech CSE @ BMSIT (2025–2029)</span></div>
-                        <div class="meta-item">💡 <span>Open to Internships & Collaborations</span></div>
-                        <div class="meta-item">📧 <span>thesiddharthagupta@gmail.com</span></div>
+                        <div class="meta-item">📍 <span id="about-location"></span></div>
+                        <div class="meta-item">🎓 <span id="about-edu-summary"></span></div>
+                        <div class="meta-item">💡 <span id="about-availability"></span></div>
+                        <div class="meta-item">📧 <span id="about-email-meta"></span></div>
                     </div>
                 </div>
             </div>
@@ -182,7 +197,7 @@
                     <div id="experience-list" class="timeline"></div>
                 </div>
                 <div class="certifications-wrap">
-                    <h2 class="section-title">My <span>Certifications</span></h2>
+                    <h2 class="section-title">My <span>Achievements</span></h2>
                     <div id="certifications-list" class="timeline"></div>
                 </div>
             </div>
@@ -237,6 +252,24 @@
 
     <!-- Scroll to Top -->
     <button id="scroll-top" class="scroll-top" aria-label="Scroll to top" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+    <!-- Cover Letter Modal -->
+    <div id="cover-letter-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" id="close-cover-modal">&times;</span>
+            <div class="modal-header">
+                <h2 id="modal-project-title">Project Cover Letter</h2>
+                <div class="modal-badge" id="modal-project-lang"></div>
+            </div>
+            <div class="modal-body">
+                <div class="cover-letter-text" id="cover-letter-content"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="copyCoverLetter()">📋 Copy to Clipboard</button>
+                <button class="btn btn-secondary" onclick="downloadCoverLetter()">📄 Download as PDF</button>
+            </div>
+        </div>
+    </div>
 
     <script src="data.js"></script>
     <script src="script.js"></script>
