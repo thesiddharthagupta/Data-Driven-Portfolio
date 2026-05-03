@@ -402,10 +402,41 @@ function loadCertifications() {
                 <label>Verification Link (Optional)</label>
                 <input type="text" value="${escapeAdminHTML(cert.link)}" onchange="currentData.certifications[${index}].link=this.value">
             </div>
+            <div class="field-group">
+                <label>Achievement Photo (Optional)</label>
+                <div style="display: flex; gap: 15px; align-items: center; margin-top: 5px;">
+                    <div class="achievement-thumb-preview" id="ach-thumb-prev-${index}">
+                        ${cert.image ? `<img src="${cert.image}" style="width:100%; height:100%; object-fit:cover;">` : '<span style="font-size:0.7rem; color:var(--text-muted);">No Image</span>'}
+                    </div>
+                    <button class="btn-admin btn-secondary-admin" onclick="document.getElementById('ach-upload-${index}').click()">📁 Upload Photo</button>
+                    <input type="file" id="ach-upload-${index}" style="display:none;" accept="image/*" onchange="handleAchievementPhotoUpload(event, ${index})">
+                    ${cert.image ? `<button class="btn-admin btn-danger-admin" style="padding:5px 10px; width:auto;" onclick="removeAchievementPhoto(${index})">🗑️ Clear</button>` : ''}
+                </div>
+            </div>
             <button class="btn-admin btn-danger-admin" onclick="deleteCertification(${index})">Delete Achievement</button>
         `;
         list.appendChild(item);
     });
+}
+
+async function handleAchievementPhotoUpload(event, index) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    try {
+        showToast('Uploading achievement photo...');
+        const publicUrl = await uploadFile(file, 'portfolio-assets', `achievements/${Date.now()}-${file.name}`);
+        currentData.certifications[index].image = publicUrl;
+        loadCertifications(); // Re-render to show preview
+        showToast('Achievement photo uploaded!');
+    } catch (e) {
+        showToast('Upload failed: ' + e.message, 'error');
+    }
+}
+
+async function removeAchievementPhoto(index) {
+    currentData.certifications[index].image = '';
+    loadCertifications();
 }
 
 function addCertification() {
@@ -1091,3 +1122,57 @@ async function changePassword() {
         location.reload();
     }
 }
+
+// ── Admin: Bulk Thumbnail Generation ────────────────────────────────────────
+
+/**
+ * Called from the "🖼️ Generate Thumbnails" button in the Admin Projects section.
+ * Runs bulkGenerateThumbnails() from thumbnail-service.js and shows live progress.
+ */
+async function adminGenerateThumbnails() {
+    const btn = document.getElementById('admin-gen-thumbs-btn');
+    const wrap = document.getElementById('admin-thumb-progress-wrap');
+    const bar  = document.getElementById('admin-thumb-progress-bar');
+    const lbl  = document.getElementById('admin-thumb-progress-label');
+
+    if (!btn) return;
+
+    // Guard: thumbnail service must be loaded
+    if (typeof bulkGenerateThumbnails !== 'function') {
+        showToast('Thumbnail service not loaded. Add thumbnail-service.js to admin page.', 'error');
+        return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = '⏳ Generating…';
+    if (wrap) wrap.style.display = 'block';
+    if (bar)  bar.style.width = '0%';
+    if (lbl)  lbl.textContent = 'Starting…';
+
+    try {
+        const result = await bulkGenerateThumbnails((done, total, title) => {
+            const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+            if (bar) bar.style.width = pct + '%';
+            if (lbl) lbl.textContent = total > 0
+                ? `Processing ${done}/${total}: ${title}`
+                : 'All thumbnails already set!';
+        });
+
+        if (lbl) lbl.textContent = `✅ Done! ${result.resolved} resolved, ${result.failed} failed.`;
+        showToast(`Thumbnails generated: ${result.resolved} updated!`, 'success');
+        await logActivity('Generated Thumbnails (Bulk)', { resolved: result.resolved, failed: result.failed });
+
+        // Reload the projects grid to show new thumbnails
+        setTimeout(() => {
+            loadProjects();
+            if (wrap) wrap.style.display = 'none';
+        }, 2500);
+    } catch (e) {
+        if (lbl) lbl.textContent = '❌ Error: ' + e.message;
+        showToast('Thumbnail generation failed: ' + e.message, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '🖼️ Generate Thumbnails';
+    }
+}
+

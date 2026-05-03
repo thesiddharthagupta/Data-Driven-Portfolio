@@ -209,6 +209,11 @@ async function renderPortfolio() {
                 <div class="timeline-dot"></div>
                 <div class="timeline-content">
                     <span class="duration">${escapeHTML(cert.date)}</span>
+                    ${cert.image ? `
+                        <div class="achievement-image-wrap">
+                            <img src="${cert.image}" alt="${escapeHTML(cert.title)}" class="achievement-image">
+                        </div>
+                    ` : ''}
                     <h3>${escapeHTML(cert.title)}</h3>
                     <span class="company">${escapeHTML(cert.issuer)}</span>
                     ${cert.link && cert.link !== '#' ? `<a href="${escapeHTML(cert.link)}" target="_blank" class="cert-link">View Certificate 🔗</a>` : ''}
@@ -322,20 +327,17 @@ async function renderPortfolio() {
     // ── Projects ──────────────────────────────
     const projectGrid = document.getElementById('project-grid');
     const seeMoreContainer = document.getElementById('see-more-container');
-    const seeMoreBtn = document.getElementById('see-more-btn');
 
     if (projectGrid) {
         let projects = [];
         try {
-            // Fetch projects from Supabase structured table
             const supabase = getSupabase();
             const { data: dbProjects, error } = await supabase
                 .from('projects')
                 .select('*')
-                .neq('display_order', -1) // Treat -1 as hidden
+                .neq('display_order', -1)
                 .order('is_featured', { ascending: false })
                 .order('updated_at', { ascending: false });
-
             if (error) throw error;
             projects = dbProjects && dbProjects.length > 0 ? dbProjects : (data.projects || []);
         } catch (e) {
@@ -347,7 +349,6 @@ async function renderPortfolio() {
             projectGrid.innerHTML = '<p class="no-projects">No projects yet. Add some from the admin panel!</p>';
             if (seeMoreContainer) seeMoreContainer.style.display = 'none';
         } else {
-            // Helper to render a set of projects
             const renderSet = (items) => {
                 return items.map(project => {
                     const techStack = project.tech_stack || [];
@@ -357,22 +358,13 @@ async function renderPortfolio() {
                     const githubLink = project.github_url || '#';
                     const liveLink = project.link || project.github_url || '#';
                     const isLive = !!project.link;
-
-                    // Prepare data for cover letter
-                    const projectData = {
-                        title: project.title,
-                        description: project.description,
-                        tech: techStack.join(', '),
-                        lang: mainLang
-                    };
-
-                    // Support for thumbnail if it exists in DB
+                    const cardId = `idx-card-${project.id || project.title.replace(/\W/g, '-')}`;
                     const thumbnail = project.thumbnail || null;
 
                     return `
-                        <div class="project-card" onclick="window.open('${escapeHTML(liveLink)}', '_blank')" style="cursor: pointer;">
-                            <div class="project-img-placeholder ${escapeHTML(project.gradient || 'gradient-1')}">
-                                ${thumbnail ? `<img src="${thumbnail}" alt="${escapeHTML(project.title)}" style="width:100%; height:100%; object-fit:cover;">` : ''}
+                        <div class="project-card" id="${cardId}" onclick="window.open('${escapeHTML(liveLink)}', '_blank')" style="cursor: pointer;">
+                            <div class="project-img-placeholder ${escapeHTML(project.gradient || 'gradient-1')}" id="thumb-${cardId}">
+                                ${thumbnail ? `<img src="${thumbnail}" alt="${escapeHTML(project.title)}" style="width:100%;height:100%;object-fit:cover;display:block;">` : `<div class="thumb-skeleton"></div>`}
                                 <div class="project-overlay">
                                     <a href="${escapeHTML(githubLink)}" class="project-overlay-btn" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">View Code →</a>
                                 </div>
@@ -384,7 +376,7 @@ async function renderPortfolio() {
                                 </div>
                                 <p>${escapeHTML(project.description)}</p>
                                 <div class="project-tags">
-                                    ${techStack.slice(0, 3).map(tag => `<span class="tag">${tag}</span>`).join('')}
+                                    ${techStack.slice(0, 3).map(tag => `<span class="tag">${escapeHTML(tag)}</span>`).join('')}
                                 </div>
                                 <div style="display: flex; gap: 10px; align-items: center; margin-top: auto;">
                                     <a href="${escapeHTML(liveLink)}" class="view-link" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">${isLive ? 'Live Demo →' : 'View Project →'}</a>
@@ -398,9 +390,29 @@ async function renderPortfolio() {
                 }).join('');
             };
 
-            // Initially show only 3
             const initialCount = 3;
             projectGrid.innerHTML = renderSet(projects.slice(0, initialCount));
+
+            // Async thumbnail resolution for visible cards (non-blocking)
+            if (typeof resolveThumbnail === 'function') {
+                projects.slice(0, initialCount).forEach(project => {
+                    if (!project.thumbnail) {
+                        const cardId = `idx-card-${project.id || project.title.replace(/\W/g, '-')}`;
+                        const thumbWrap = document.getElementById(`thumb-${cardId}`);
+                        if (!thumbWrap) return;
+                        resolveThumbnail(project, true).then(({ thumbnail_url, alt_text }) => {
+                            const skeleton = thumbWrap.querySelector('.thumb-skeleton');
+                            if (skeleton) {
+                                const img = document.createElement('img');
+                                img.src = thumbnail_url;
+                                img.alt = alt_text;
+                                img.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
+                                thumbWrap.replaceChild(img, skeleton);
+                            }
+                        }).catch(() => { /* silent fail — gradient fallback stays */ });
+                    }
+                });
+            }
 
             if (projects.length > initialCount) {
                 if (seeMoreContainer) seeMoreContainer.style.display = 'flex';

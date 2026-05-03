@@ -14,6 +14,8 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="../config.js"></script>
     <script src="../supabase-init.js"></script>
+    <!-- Thumbnail auto-generation service -->
+    <script src="../thumbnail-service.js"></script>
 </head>
 <body>
 
@@ -278,9 +280,19 @@
                 <div id="projects-grid" class="projects-admin-grid">
                     <!-- Projects will be loaded here dynamically -->
                 </div>
-                <div style="margin-top: 20px; display: flex; gap: 10px;">
+                <div style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
                     <button class="btn-admin btn-secondary-admin" onclick="addProject()">➕ Add Manual Project</button>
                     <button class="btn-admin btn-primary-admin" onclick="triggerSync()">🔄 Refresh from GitHub</button>
+                    <button class="btn-generate-thumbs" id="admin-gen-thumbs-btn" onclick="adminGenerateThumbnails()">
+                        🖼️ Generate Thumbnails
+                    </button>
+                </div>
+                <!-- Thumbnail bulk generation progress bar -->
+                <div class="thumb-progress-wrap" id="admin-thumb-progress-wrap">
+                    <div class="thumb-progress-bar-track">
+                        <div class="thumb-progress-bar-fill" id="admin-thumb-progress-bar"></div>
+                    </div>
+                    <div class="thumb-progress-label" id="admin-thumb-progress-label">Starting…</div>
                 </div>
             </section>
 
@@ -551,6 +563,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
     <script src="../data.js"></script>
     <script src="../github-sync.js"></script>
+    <script src="../thumbnail-service.js"></script>
     <script src="../admin.js"></script>
 </body>
 </html>

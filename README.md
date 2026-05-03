@@ -7,7 +7,7 @@ A highly customizable, responsive, and modern personal portfolio designed specif
 ## ✨ Features
 
 - **Supabase Backend Integration:** Fully powered by Supabase for Database, Authentication, and Storage. No more `localStorage` limits!
-- **Built-in Admin Dashboard:** A secure, authenticated backend (`/admin.html`) that allows you to update your portfolio's content on the fly without touching any code.
+- **Built-in Admin Dashboard:** A secure, authenticated backend (`/admin/`) that allows you to update your portfolio's content on the fly without touching any code.
 - **Automated GitHub Sync:** Connect your GitHub account via the Admin Panel to automatically fetch, sync, and organize all your repositories into beautiful project cards.
 - **Dynamic Contact Form & Notifications:** Visitors can send you messages directly from the site. Messages are saved to your Supabase database, and you receive real-time email notifications powered by **EmailJS**.
 - **Live GitHub Stats:** Real-time fetching of your GitHub followers, public repos, and total contributions displayed in an animated statistics bar.
@@ -40,7 +40,7 @@ A highly customizable, responsive, and modern personal portfolio designed specif
 
 To edit the portfolio content:
 
-1. Open `admin.html` in your browser (or click the subtle ⚙️ gear icon in the portfolio's top navigation bar).
+1. Open `/admin/` in your browser (or click the subtle ⚙️ gear icon in the portfolio's top navigation bar).
 2. Log in using your registered Supabase administrator credentials.
 3. Use the dashboard to:
    - Update your hero text, bio, and resume timeline.
