@@ -8,6 +8,25 @@ const supabase = createClient(
     process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
+// Middleware to verify Supabase User
+async function requireAuth(req, res, next) {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) return res.status(401).json({ error: 'No authorization header' });
+
+    const token = authHeader.split(' ')[1];
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+
+    if (error || !user) {
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    req.user = user;
+    next();
+}
+
+// Apply auth to all routes below
+router.use(requireAuth);
+
 // Get Sync Status
 router.get('/sync-status', async (req, res) => {
     const { data, error } = await supabase
@@ -36,7 +55,7 @@ router.get('/projects', async (req, res) => {
         .from('projects')
         .select('*')
         .order('is_pinned', { ascending: false })
-        .order('last_updated', { ascending: false });
+        .order('updated_at', { ascending: false });
     
     if (error) return res.status(500).json({ error: error.message });
     res.json(data);
