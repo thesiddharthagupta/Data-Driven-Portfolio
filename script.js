@@ -9,16 +9,16 @@ function escapeHTML(str) {
 }
 
 const LANG_COLORS = {
-    'Python':   '#3572A5',
-    'C':        '#555555',
-    'C#':       '#178600',
-    'C++':      '#f34b7d',
-    'Java':     '#b07219',
-    'JavaScript':'#f1e05a',
-    'CSS':      '#563d7c',
-    'HTML':     '#e34c26',
+    'Python': '#3572A5',
+    'C': '#555555',
+    'C#': '#178600',
+    'C++': '#f34b7d',
+    'Java': '#b07219',
+    'JavaScript': '#f1e05a',
+    'CSS': '#563d7c',
+    'HTML': '#e34c26',
     'Markdown': '#083fa1',
-    'default':  '#6366f1'
+    'default': '#6366f1'
 };
 
 // ── GitHub Live Stats ─────────────────────────
@@ -82,10 +82,10 @@ async function fetchGitHubStats(username) {
 
     // 5. Build stats object
     const stats = {
-        repos:         profileData?.public_repos ?? null,
-        followers:     profileData?.followers ?? null,
+        repos: profileData?.public_repos ?? null,
+        followers: profileData?.followers ?? null,
         contributions: contribTotal,
-        languages:     langCount
+        languages: langCount
     };
 
     // 6. Cache result
@@ -96,10 +96,11 @@ async function fetchGitHubStats(username) {
     applyGitHubStats(stats);
 }
 
-function applyGitHubStats(stats) {
+async function applyGitHubStats(stats) {
     const badge = document.getElementById('stats-live-badge');
     const errorEl = document.getElementById('stats-error');
-    const fallback = getData().stats || { repos: 7, contributions: 485, followers: 3, languages: 5 };
+    const portfolioData = await getData();
+    const fallback = portfolioData.stats || { repos: 7, contributions: 485, followers: 3, languages: 5 };
     let anyLive = false;
     let anyFailed = false;
 
@@ -224,9 +225,9 @@ async function renderPortfolio() {
     }
 
     // ── Socials ──────────────────────────────
-    const footerSocials   = document.getElementById('footer-socials');
-    const heroSocials     = document.getElementById('hero-socials');
-    const contactSocials  = document.getElementById('contact-socials-display');
+    const footerSocials = document.getElementById('footer-socials');
+    const heroSocials = document.getElementById('hero-socials');
+    const contactSocials = document.getElementById('contact-socials-display');
 
     if (footerSocials || heroSocials || contactSocials) {
         const socials = data.socials || {};
@@ -254,7 +255,7 @@ async function renderPortfolio() {
             }).join('');
 
         if (footerSocials) footerSocials.innerHTML = socialHTML;
-        if (heroSocials)   heroSocials.innerHTML   = socialHTML;
+        if (heroSocials) heroSocials.innerHTML = socialHTML;
         if (contactSocials) contactSocials.innerHTML = contactSocialHTML;
     }
 
@@ -278,25 +279,33 @@ async function renderPortfolio() {
     // ── Resume Button ─────────────────────────
     const resumeBtn = document.getElementById('resume-btn');
     if (resumeBtn) {
+        // Only show and enable if an actual file has been uploaded
         if (profile.resumeFile) {
             resumeBtn.href = profile.resumeFile;
             resumeBtn.download = profile.resumeName || 'resume.pdf';
             resumeBtn.style.display = 'inline-flex';
-        } else if (profile.resumeUrl) {
-            resumeBtn.href = profile.resumeUrl;
-            resumeBtn.target = '_blank';
-            resumeBtn.removeAttribute('download');
-            resumeBtn.style.display = 'inline-flex';
         } else {
+            // Hide if no uploaded file is available
             resumeBtn.style.display = 'none';
+            resumeBtn.href = 'javascript:void(0)';
+            resumeBtn.removeAttribute('download');
         }
     }
 
     // ── About ─────────────────────────────────
+    const about = data.about || {};
     const bio1 = document.getElementById('about-bio1');
     const bio2 = document.getElementById('about-bio2');
-    if (bio1) bio1.textContent = data.about.bio1 || '';
-    if (bio2) bio2.textContent = data.about.bio2 || '';
+    if (bio1) bio1.textContent = about.bio1 || '';
+    if (bio2) bio2.textContent = about.bio2 || '';
+    const loc = document.getElementById('about-location');
+    if (loc) loc.textContent = about.location || 'Bangalore, India';
+    const edu = document.getElementById('about-edu-summary');
+    if (edu) edu.textContent = about.education || '';
+    const avail = document.getElementById('about-availability');
+    if (avail) avail.textContent = about.availability || '';
+    const emailMeta = document.getElementById('about-email-meta');
+    if (emailMeta) emailMeta.textContent = about.email || '';
 
     // ── Skills ────────────────────────────────
     const skillsGrid = document.getElementById('skills-grid');
@@ -312,6 +321,9 @@ async function renderPortfolio() {
 
     // ── Projects ──────────────────────────────
     const projectGrid = document.getElementById('project-grid');
+    const seeMoreContainer = document.getElementById('see-more-container');
+    const seeMoreBtn = document.getElementById('see-more-btn');
+
     if (projectGrid) {
         let projects = [];
         try {
@@ -333,37 +345,68 @@ async function renderPortfolio() {
 
         if (projects.length === 0) {
             projectGrid.innerHTML = '<p class="no-projects">No projects yet. Add some from the admin panel!</p>';
+            if (seeMoreContainer) seeMoreContainer.style.display = 'none';
         } else {
-            projectGrid.innerHTML = projects.map(project => {
-                const techStack = project.tech_stack || [];
-                const mainLang = project.language || (techStack.length > 0 ? techStack[0] : '');
-                const langColor = LANG_COLORS[mainLang] || LANG_COLORS['default'];
-                const langBadge = mainLang ? `<span class="lang-badge" style="background:${langColor}22; color:${langColor}; border:1px solid ${langColor}44;">● ${escapeHTML(mainLang)}</span>` : '';
-                const githubLink = project.github_url || '#';
-                const liveLink = project.link || project.github_url || '#';
-                const isLive = !!project.link;
-                
-                return `
-                    <div class="project-card" onclick="window.open('${escapeHTML(liveLink)}', '_blank')" style="cursor: pointer;">
-                        <div class="project-img-placeholder ${escapeHTML(project.gradient || 'gradient-1')}">
-                            <div class="project-overlay">
-                                <a href="${escapeHTML(githubLink)}" class="project-overlay-btn" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">View Code →</a>
+            // Helper to render a set of projects
+            const renderSet = (items) => {
+                return items.map(project => {
+                    const techStack = project.tech_stack || [];
+                    const mainLang = project.language || (techStack.length > 0 ? techStack[0] : '');
+                    const langColor = LANG_COLORS[mainLang] || LANG_COLORS['default'];
+                    const langBadge = mainLang ? `<span class="lang-badge" style="background:${langColor}22; color:${langColor}; border:1px solid ${langColor}44;">● ${escapeHTML(mainLang)}</span>` : '';
+                    const githubLink = project.github_url || '#';
+                    const liveLink = project.link || project.github_url || '#';
+                    const isLive = !!project.link;
+
+                    // Prepare data for cover letter
+                    const projectData = {
+                        title: project.title,
+                        description: project.description,
+                        tech: techStack.join(', '),
+                        lang: mainLang
+                    };
+
+                    // Support for thumbnail if it exists in DB
+                    const thumbnail = project.thumbnail || null;
+
+                    return `
+                        <div class="project-card" onclick="window.open('${escapeHTML(liveLink)}', '_blank')" style="cursor: pointer;">
+                            <div class="project-img-placeholder ${escapeHTML(project.gradient || 'gradient-1')}">
+                                ${thumbnail ? `<img src="${thumbnail}" alt="${escapeHTML(project.title)}" style="width:100%; height:100%; object-fit:cover;">` : ''}
+                                <div class="project-overlay">
+                                    <a href="${escapeHTML(githubLink)}" class="project-overlay-btn" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">View Code →</a>
+                                </div>
+                            </div>
+                            <div class="project-info">
+                                <div class="project-header-row">
+                                    <h3>${escapeHTML(project.title)}</h3>
+                                    ${langBadge}
+                                </div>
+                                <p>${escapeHTML(project.description)}</p>
+                                <div class="project-tags">
+                                    ${techStack.slice(0, 3).map(tag => `<span class="tag">${tag}</span>`).join('')}
+                                </div>
+                                <div style="display: flex; gap: 10px; align-items: center; margin-top: auto;">
+                                    <a href="${escapeHTML(liveLink)}" class="view-link" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">${isLive ? 'Live Demo →' : 'View Project →'}</a>
+                                    <button class="btn-cover-letter" onclick="event.stopPropagation(); openCoverLetter('${escapeHTML(project.title)}', '${escapeHTML(project.description)}', '${escapeHTML(techStack.join(', '))}', '${escapeHTML(mainLang)}')">
+                                        📄 Cover Letter
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                        <div class="project-info">
-                            <div class="project-header-row">
-                                <h3>${escapeHTML(project.title)}</h3>
-                                ${langBadge}
-                            </div>
-                            <p>${escapeHTML(project.description)}</p>
-                            <div class="project-tags">
-                                ${techStack.slice(0, 3).map(tag => `<span class="tag">${tag}</span>`).join('')}
-                            </div>
-                            <a href="${escapeHTML(liveLink)}" class="view-link" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">${isLive ? 'Live Demo →' : 'View Project →'}</a>
-                        </div>
-                    </div>
-                `;
-            }).join('');
+                    `;
+                }).join('');
+            };
+
+            // Initially show only 3
+            const initialCount = 3;
+            projectGrid.innerHTML = renderSet(projects.slice(0, initialCount));
+
+            if (projects.length > initialCount) {
+                if (seeMoreContainer) seeMoreContainer.style.display = 'flex';
+            } else {
+                if (seeMoreContainer) seeMoreContainer.style.display = 'none';
+            }
         }
     }
 
@@ -371,6 +414,73 @@ async function renderPortfolio() {
     if (data.general.typingTitles && data.general.typingTitles.length > 0) {
         initTypingEffect(data.general.typingTitles);
     }
+}
+
+// ── Cover Letter Logic ──────────────────────
+function openCoverLetter(title, desc, tech, lang) {
+    const modal = document.getElementById('cover-letter-modal');
+    const titleEl = document.getElementById('modal-project-title');
+    const contentEl = document.getElementById('cover-letter-content');
+    const langEl = document.getElementById('modal-project-lang');
+
+    if (!modal || !contentEl) return;
+
+    titleEl.textContent = title;
+    langEl.textContent = lang;
+    langEl.style.background = (LANG_COLORS[lang] || LANG_COLORS.default) + '22';
+    langEl.style.color = LANG_COLORS[lang] || LANG_COLORS.default;
+
+    const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+    const letter = `Date: ${today}
+
+To Whom It May Concern,
+
+I am writing to present my technical project, "${title}", as a testament to my skills and experience as a developer.
+
+In this project, I focused on building a robust solution to ${desc}. By leveraging a modern tech stack including ${tech || lang || 'various technologies'}, I was able to implement ${lang ? 'efficient ' + lang + '-based logic' : 'scalable architecture'} and ensure high performance.
+
+Key Highlights of the Project:
+- Purpose: ${desc}
+- Technologies Used: ${tech || lang}
+- Role: Lead Developer / Architect
+
+This project accurately reflects my problem-solving abilities and my commitment to writing clean, maintainable code. I am confident that the expertise gained through this build makes me a strong candidate for roles requiring ${tech || lang} proficiency.
+
+Thank you for your time and consideration.
+
+Sincerely,
+Siddharth Gupta
+CSE Student & Technical Specialist`;
+
+    contentEl.textContent = letter;
+    modal.style.display = 'block';
+
+    // Close on click outside or X
+    const closeBtn = document.getElementById('close-cover-modal');
+    closeBtn.onclick = () => modal.style.display = 'none';
+    window.onclick = (e) => { if (e.target === modal) modal.style.display = 'none'; };
+}
+
+function copyCoverLetter() {
+    const text = document.getElementById('cover-letter-content').textContent;
+    navigator.clipboard.writeText(text).then(() => {
+        alert('Cover letter copied to clipboard! 📋');
+    });
+}
+
+function downloadCoverLetter() {
+    const text = document.getElementById('cover-letter-content').textContent;
+    const title = document.getElementById('modal-project-title').textContent;
+    const blob = new Blob([text], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${title.replace(/\s+/g, '_')}_Cover_Letter.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
 }
 
 function getSkillIcon(title) {
@@ -448,7 +558,7 @@ function initScrollBehaviors() {
 // ── Hamburger Menu ────────────────────────────
 function initHamburger() {
     const hamburger = document.getElementById('hamburger');
-    const navLinks  = document.getElementById('nav-links');
+    const navLinks = document.getElementById('nav-links');
     if (!hamburger || !navLinks) return;
     hamburger.addEventListener('click', () => {
         hamburger.classList.toggle('open');
@@ -502,15 +612,15 @@ function initCounterAnimation() {
 
 // ── Contact Form ──────────────────────────────
 function initContactForm() {
-    const form      = document.getElementById('dynamic-contact-form');
+    const form = document.getElementById('dynamic-contact-form');
     if (!form) return;
     const submitBtn = document.getElementById('submit-btn');
-    const formMsg   = document.getElementById('form-msg');
+    const formMsg = document.getElementById('form-msg');
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const name    = document.getElementById('contact-name').value.trim();
-        const email   = document.getElementById('contact-email').value.trim();
+        const name = document.getElementById('contact-name').value.trim();
+        const email = document.getElementById('contact-email').value.trim();
         const message = document.getElementById('contact-message').value.trim();
 
         if (!name || !email || !message) {
@@ -570,7 +680,7 @@ function initContactForm() {
 // ── Smooth Scroll ─────────────────────────────
 function initSmoothScroll() {
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-        anchor.addEventListener('click', function(e) {
+        anchor.addEventListener('click', function (e) {
             const id = this.getAttribute('href');
             if (id === '#') return;
             e.preventDefault();
