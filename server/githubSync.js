@@ -73,7 +73,7 @@ class GitHubSyncService {
         if (existingProject && existingProject.manual_override) {
             // Only update dynamic fields if manual override is on
             await this.supabase.from('projects').update({
-                last_updated: repo.updated_at,
+                updated_at: repo.updated_at,
                 github_url: repo.html_url,
                 stars: repo.stargazers_count,
                 forks: repo.forks_count,
@@ -95,7 +95,7 @@ class GitHubSyncService {
             tech_stack: techStack,
             github_url: repo.html_url,
             homepage_url: repo.homepage,
-            last_updated: repo.updated_at,
+            updated_at: repo.updated_at,
             languages: await this.getLanguages(repo.name),
             stars: repo.stargazers_count,
             forks: repo.forks_count,
@@ -152,12 +152,24 @@ class GitHubSyncService {
     }
 
     async updateSyncStatus(status, error = null) {
-        await this.supabase.from('sync_status').upsert({
-            id: 1, // Only one row for status
-            last_sync: new Date(),
-            status: status,
-            error_message: error
-        });
+        try {
+            const { data } = await this.supabase.from('sync_status').select('id').limit(1).maybeSingle();
+            if (data) {
+                await this.supabase.from('sync_status').update({
+                    last_sync: new Date(),
+                    status: status,
+                    error_message: error
+                }).eq('id', data.id);
+            } else {
+                await this.supabase.from('sync_status').insert({
+                    last_sync: new Date(),
+                    status: status,
+                    error_message: error
+                });
+            }
+        } catch (e) {
+            console.error('Error updating sync status:', e);
+        }
     }
 }
 
