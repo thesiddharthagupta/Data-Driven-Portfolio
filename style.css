@@ -47,7 +47,7 @@ h1, h2, h3, h4, h5, h6, .logo {
     font-size: 2.5rem;
     font-weight: 700;
     text-align: center;
-    margin-bottom: 3rem;
+    margin-bottom: 1.5rem;
     position: relative;
 }
 
@@ -60,7 +60,7 @@ h1, h2, h3, h4, h5, h6, .logo {
 }
 
 section {
-    padding: 4.5rem 0;
+    padding: 4rem 0;
 }
 
 /* Navigation */
@@ -397,7 +397,7 @@ section {
 .project-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-    gap: 2rem;
+    gap: 1.5rem;
 }
 
 .project-card {
@@ -482,7 +482,7 @@ section {
 .see-more-container {
     display: flex;
     justify-content: center;
-    margin-top: 3rem;
+    margin-top: 2rem;
 }
 
 #see-more-btn {
@@ -776,7 +776,7 @@ footer {
 }
 .timeline-item {
     position: relative;
-    margin-bottom: 2.5rem;
+    margin-bottom: 3.5rem;
 }
 .timeline-item:last-child {
     margin-bottom: 0;
@@ -803,7 +803,7 @@ footer {
 .timeline-content {
     background: var(--bg-card);
     border: 1px solid rgba(255, 255, 255, 0.05);
-    padding: 2rem;
+    padding: 2.5rem;
     border-radius: 16px;
     transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
     backdrop-filter: blur(10px);
@@ -924,8 +924,24 @@ footer {
 
 /* Section Spacing & Transitions */
 section {
-    padding: 4.5rem 0;
     transition: background 0.5s ease;
+    position: relative;
+}
+
+section:nth-of-type(even) {
+    background: rgba(255, 255, 255, 0.015);
+}
+
+.skills, .about, .resume-section, .contact {
+    position: relative;
+}
+
+.skills::before, .about::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.03), transparent 70%);
+    pointer-events: none;
 }
 
 .section-title {
@@ -1060,7 +1076,7 @@ section {
     text-align: center;
     color: var(--text-secondary);
     font-size: 1rem;
-    margin-top: -2rem;
+    margin-top: -1.5rem;
     margin-bottom: 2.5rem;
     max-width: 600px;
     margin-left: auto;
@@ -1069,7 +1085,7 @@ section {
 
 /* ── Stats Bar ───────────────────────────── */
 .stats-bar {
-    padding: 3rem 0;
+    padding: 1rem 0;
     background: linear-gradient(135deg, rgba(99,102,241,0.06), rgba(236,72,153,0.04));
     border-top: 1px solid rgba(255,255,255,0.05);
     border-bottom: 1px solid rgba(255,255,255,0.05);
@@ -1144,7 +1160,7 @@ section {
 /* ── GitHub Link Row ─────────────────────── */
 .github-link-row {
     text-align: center;
-    margin-bottom: 3rem;
+    margin-bottom: 1.5rem;
 }
 .btn-github {
     display: inline-flex;
@@ -1386,8 +1402,10 @@ section {
 
 /* ── GitHub Stats Section ────────────────── */
 .github-stats-section {
-    padding: 3rem 0 4.5rem;
-    background: rgba(10,12,18,0.3);
+    padding: 4rem 0;
+    background: rgba(10,12,18,0.5);
+    border-top: 1px solid rgba(255,255,255,0.03);
+    border-bottom: 1px solid rgba(255,255,255,0.03);
 }
 .github-stats-grid {
     display: grid;

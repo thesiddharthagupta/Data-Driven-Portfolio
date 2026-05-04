@@ -352,7 +352,12 @@ async function renderPortfolio() {
             projects = dbProjects && dbProjects.length > 0 ? dbProjects : (data.projects || []);
         } catch (e) {
             console.error('Error loading projects from Supabase, using fallback:', e);
-            projects = data.projects || [];
+            projects = data.projects && data.projects.length > 0 ? data.projects : [];
+        }
+
+        // Final fallback to DEFAULT_DATA if both DB and local state are empty
+        if (projects.length === 0 && typeof DEFAULT_DATA !== 'undefined') {
+            projects = DEFAULT_DATA.projects || [];
         }
 
         if (projects.length === 0) {

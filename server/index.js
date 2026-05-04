@@ -20,19 +20,19 @@ app.use('/api', routes);
 const rootDir = path.join(__dirname, '../');
 app.get('/', (req, res) => res.sendFile(path.join(rootDir, 'index.html')));
 app.get('/admin', (req, res) => res.sendFile(path.join(rootDir, 'admin/index.html')));
-// Serve static assets, excluding sensitive files
-app.use(express.static(rootDir, {
-    index: false, // Don't serve index.html automatically
-    setHeaders: (res, path) => {
-        const filename = path.split(/[\\/]/).pop().toLowerCase();
-        const sensitiveFiles = ['.env', 'package.json', 'package-lock.json', 'migration.sql', 'config.js'];
-        const sensitiveDirs = ['/server/', '/admin/index.html', '/.git/'];
-        
-        if (sensitiveFiles.includes(filename) || sensitiveDirs.some(dir => path.includes(dir))) {
-            res.status(403).end();
-        }
+// Security Middleware: Block access to sensitive files
+app.use((req, res, next) => {
+    const filename = path.basename(req.path).toLowerCase();
+    const sensitiveFiles = ['.env', 'package.json', 'package-lock.json', 'migration.sql'];
+    const sensitiveDirs = ['/server/', '/.git/'];
+    
+    if (sensitiveFiles.includes(filename) || sensitiveDirs.some(dir => req.path.includes(dir))) {
+        return res.status(403).send('Forbidden');
     }
-}));
+    next();
+});
+
+app.use(express.static(rootDir, { index: false }));
 
 // Health Check
 app.get('/health', (req, res) => {
