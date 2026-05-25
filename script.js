@@ -725,8 +725,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     initContactForm();
     initSmoothScroll();
 
+    // Initialize Neural Grid Background
+    if (typeof NeuralGrid !== 'undefined') {
+        new NeuralGrid('neural-canvas', { showGlobe: true });
+    }
+
     // Fetch live GitHub stats (non-blocking)
     const ghUser = ((await getData()).stats || {}).githubUser || 'thesiddharthagupta';
     fetchGitHubStats(ghUser);
 });
-

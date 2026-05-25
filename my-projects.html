@@ -53,7 +53,8 @@
         </div>
     </nav>
 
-    <section class="projects-hero">
+    <section class="projects-hero" id="projects-hero-section">
+        <canvas id="projects-neural-canvas" class="neural-canvas"></canvas>
         <div class="container">
             <h1 class="section-title">All <span>Projects</span></h1>
             <p class="section-subtitle">A comprehensive archive of my technical journey, from open-source contributions to personal experiments.</p>
@@ -80,9 +81,14 @@
     </footer>
 
     <script src="data.js"></script>
+    <script src="neural-grid.js"></script>
     <script>
         // Inline script for My Projects page
         document.addEventListener('DOMContentLoaded', async () => {
+            // Initialize Neural Grid Background
+            if (typeof NeuralGrid !== 'undefined') {
+                new NeuralGrid('projects-neural-canvas', 'projects-hero-section');
+            }
             const grid = document.getElementById('all-projects-grid');
             const searchInput = document.getElementById('project-search');
             let allProjects = [];
