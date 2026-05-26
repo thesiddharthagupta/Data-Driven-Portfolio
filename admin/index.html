@@ -150,11 +150,14 @@
                             <img id="preview-img" src="" alt="" style="display:none; width:100%; height:100%; object-fit:cover; border-radius:50%;">
                         </div>
                         <div class="preview-actions">
+                            <div class="photo-status" id="photo-status">Visible on site</div>
                             <label class="btn-admin btn-secondary-admin" style="cursor:pointer;">
                                 📸 Upload & Crop
                                 <input type="file" id="photo-upload" accept="image/*" style="display:none;" onchange="handlePhotoUpload(event)">
                             </label>
-                            <button class="btn-admin btn-danger-admin" style="width:auto;" onclick="removePhoto()">✕ Remove</button>
+                            <button class="btn-admin btn-secondary-admin" id="hide-photo-btn" style="width:auto;" onclick="hidePhoto()">Hide From Site</button>
+                            <button class="btn-admin btn-primary-admin" id="restore-photo-btn" style="width:auto; display:none;" onclick="restorePhoto()">Show Photo Again</button>
+                            <button class="btn-admin btn-danger-admin" style="width:auto;" onclick="clearPhoto()">Clear Uploaded Photo</button>
                         </div>
                     </div>
                     

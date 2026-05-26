@@ -304,6 +304,7 @@ async function applyCrop() {
             showToast('Uploading photo...');
             const publicUrl = await uploadFile(blob, 'portfolio-assets', 'profile_photo.webp');
             currentData.profile.photo = publicUrl;
+            currentData.profile.photoHidden = false;
             await persistData();
             updatePhotoPreview();
             closeCropper();
@@ -317,6 +318,12 @@ async function applyCrop() {
 function updatePhotoPreview() {
     const previewImg = document.getElementById('preview-img');
     const placeholder = document.getElementById('preview-placeholder');
+    const status = document.getElementById('photo-status');
+    const hideBtn = document.getElementById('hide-photo-btn');
+    const restoreBtn = document.getElementById('restore-photo-btn');
+    const hasPhoto = Boolean(currentData.profile.photo);
+    const isHidden = Boolean(currentData.profile.photoHidden);
+
     if (currentData.profile.photo) {
         previewImg.src = currentData.profile.photo;
         previewImg.style.display = 'block';
@@ -326,13 +333,42 @@ function updatePhotoPreview() {
         placeholder.style.display = 'flex';
         placeholder.textContent = currentData.profile.fallbackEmoji || '👤';
     }
+
+    if (status) {
+        status.textContent = isHidden
+            ? 'Hidden from site'
+            : (hasPhoto ? 'Visible on site' : 'Fallback is visible');
+        status.classList.toggle('is-hidden', isHidden);
+    }
+    if (hideBtn) {
+        hideBtn.style.display = !isHidden ? 'inline-flex' : 'none';
+    }
+    if (restoreBtn) {
+        restoreBtn.style.display = isHidden ? 'inline-flex' : 'none';
+    }
 }
 
-async function removePhoto() {
-    currentData.profile.photo = '';
+async function hidePhoto() {
+    currentData.profile.photoHidden = true;
     updatePhotoPreview();
     await persistData();
-    showToast('Photo removed.');
+    showToast('Photo area hidden from site.');
+}
+
+async function restorePhoto() {
+    currentData.profile.photoHidden = false;
+    updatePhotoPreview();
+    await persistData();
+    showToast('Photo area is visible again.');
+}
+
+async function clearPhoto() {
+    if (!confirm('Clear the uploaded photo from portfolio data? You will need to upload it again later.')) return;
+    currentData.profile.photo = '';
+    currentData.profile.photoHidden = false;
+    updatePhotoPreview();
+    await persistData();
+    showToast('Uploaded photo cleared.');
 }
 
 // ── Resume Management ────────────────────────
@@ -362,6 +398,7 @@ async function saveProfile() {
     updatePhotoPreview();
     await logActivity('Updated Profile Settings', {
         fallbackEmoji: currentData.profile.fallbackEmoji,
+        photoHidden: Boolean(currentData.profile.photoHidden),
         resumeUrl: currentData.profile.resumeUrl
     }, prev);
 }
@@ -1175,4 +1212,3 @@ async function adminGenerateThumbnails() {
         btn.textContent = '🖼️ Generate Thumbnails';
     }
 }
-

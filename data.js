@@ -125,6 +125,7 @@ const DEFAULT_DATA = {
   },
   profile: {
     photo: "",
+    photoHidden: false,
     fallbackEmoji: "👨‍💻",
     resumeUrl: "",
     resumeFile: "",

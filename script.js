@@ -275,20 +275,26 @@ async function renderPortfolio() {
     }
 
     // ── Profile Photo ─────────────────────────
+    const photoWrap = document.querySelector('.hero-photo-wrap');
     const photoImg = document.getElementById('hero-photo-img');
     const photoPlaceholder = document.getElementById('photo-placeholder');
     const profile = data.profile || {};
+    const shouldShowPhotoFrame = !profile.photoHidden;
+
+    if (photoWrap) {
+        photoWrap.style.display = shouldShowPhotoFrame ? '' : 'none';
+    }
 
     const emojiEl = document.getElementById('photo-emoji');
     if (emojiEl && profile.fallbackEmoji) emojiEl.textContent = profile.fallbackEmoji;
 
-    if (profile.photo && photoImg && photoPlaceholder) {
+    if (shouldShowPhotoFrame && profile.photo && photoImg && photoPlaceholder) {
         photoImg.src = profile.photo;
         photoImg.style.display = 'block';
         photoPlaceholder.style.display = 'none';
     } else if (photoImg) {
         photoImg.style.display = 'none';
-        if (photoPlaceholder) photoPlaceholder.style.display = 'flex';
+        if (photoPlaceholder) photoPlaceholder.style.display = shouldShowPhotoFrame ? 'flex' : 'none';
     }
 
     // ── Resume Button ─────────────────────────
