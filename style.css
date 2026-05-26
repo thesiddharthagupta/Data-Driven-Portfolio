@@ -338,6 +338,95 @@ section {
     line-height: 1;
 }
 
+.earth-location-marker {
+    position: absolute;
+    left: 72%;
+    top: 36%;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    padding: 0.28rem 0.45rem 0.28rem 0.28rem;
+    border-radius: 999px;
+    background: rgba(3, 7, 18, 0.46);
+    border: 1px solid rgba(34, 211, 238, 0.16);
+    box-shadow: 0 0 24px rgba(34, 211, 238, 0.14);
+    backdrop-filter: blur(10px);
+    animation: location-float 5s ease-in-out infinite;
+}
+
+.earth-location-marker::before {
+    content: "";
+    position: absolute;
+    right: 17px;
+    top: 50%;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #22d3ee;
+    box-shadow:
+        0 0 0 8px rgba(34, 211, 238, 0.08),
+        0 0 22px rgba(34, 211, 238, 0.62),
+        0 0 42px rgba(99, 102, 241, 0.32);
+    transform: translate(50%, -50%);
+}
+
+.earth-location-avatar {
+    width: 38px;
+    height: 38px;
+    flex: 0 0 auto;
+    border-radius: 50%;
+    padding: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--accent-1), #22d3ee, var(--accent-2));
+    box-shadow: 0 0 18px rgba(34, 211, 238, 0.35), 0 0 30px rgba(99, 102, 241, 0.22);
+    z-index: 1;
+}
+
+.earth-location-avatar img,
+.earth-location-avatar span {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: #050814;
+}
+
+.earth-location-avatar img {
+    object-fit: cover;
+    display: none;
+}
+
+.earth-location-avatar span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.15rem;
+    line-height: 1;
+}
+
+.earth-location-icon {
+    width: 26px;
+    height: 26px;
+    flex: 0 0 auto;
+    fill: none;
+    stroke: #22d3ee;
+    stroke-width: 2;
+    filter: drop-shadow(0 0 16px rgba(34, 211, 238, 0.45));
+    z-index: 1;
+}
+
+.earth-location-icon circle {
+    fill: rgba(34, 211, 238, 0.22);
+}
+
+@keyframes location-float {
+    0%, 100% { transform: translate3d(0, 0, 0); }
+    50% { transform: translate3d(0, -8px, 0); }
+}
+
 /* Floating Badges */
 .badge {
     position: absolute;
@@ -1013,6 +1102,7 @@ section:nth-of-type(even) {
     .dynamic-title { font-size: 3rem; min-height: 80px; }
     .about-content { grid-template-columns: 1fr; gap: 2rem; }
     .hero-photo-wrap { position: relative; right: auto; top: auto; transform: none; margin: 2rem auto 0 auto; width: 250px; height: 250px; display: flex; align-items: center; justify-content: center; }
+    .earth-location-marker { left: auto; right: 50%; top: auto; bottom: 9.5rem; transform: translateX(50%); }
     .photo-inner .photo-emoji { font-size: 3.5rem; }
     .hero {
         text-align: center;
@@ -1028,6 +1118,17 @@ section:nth-of-type(even) {
     .btn-secondary { margin-left: 0; }
     .nav-links { display: none; }
     .contact-wrapper { padding: 2rem 1.5rem; }
+}
+
+@media (max-width: 768px) {
+    .earth-location-marker {
+        animation-name: location-float-mobile;
+    }
+}
+
+@keyframes location-float-mobile {
+    0%, 100% { transform: translate3d(50%, 0, 0); }
+    50% { transform: translate3d(50%, -8px, 0); }
 }
 
 .no-projects {

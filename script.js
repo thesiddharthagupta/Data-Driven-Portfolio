@@ -278,6 +278,8 @@ async function renderPortfolio() {
     const photoWrap = document.querySelector('.hero-photo-wrap');
     const photoImg = document.getElementById('hero-photo-img');
     const photoPlaceholder = document.getElementById('photo-placeholder');
+    const earthLocationPhoto = document.getElementById('earth-location-photo');
+    const earthLocationEmoji = document.getElementById('earth-location-emoji');
     const profile = data.profile || {};
     const shouldShowPhotoFrame = !profile.photoHidden;
 
@@ -287,6 +289,16 @@ async function renderPortfolio() {
 
     const emojiEl = document.getElementById('photo-emoji');
     if (emojiEl && profile.fallbackEmoji) emojiEl.textContent = profile.fallbackEmoji;
+    if (earthLocationEmoji && profile.fallbackEmoji) earthLocationEmoji.textContent = profile.fallbackEmoji;
+
+    if (profile.photo && earthLocationPhoto && earthLocationEmoji) {
+        earthLocationPhoto.src = profile.photo;
+        earthLocationPhoto.style.display = 'block';
+        earthLocationEmoji.style.display = 'none';
+    } else {
+        if (earthLocationPhoto) earthLocationPhoto.style.display = 'none';
+        if (earthLocationEmoji) earthLocationEmoji.style.display = 'inline-flex';
+    }
 
     if (shouldShowPhotoFrame && profile.photo && photoImg && photoPlaceholder) {
         photoImg.src = profile.photo;

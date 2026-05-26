@@ -352,7 +352,7 @@ async function hidePhoto() {
     currentData.profile.photoHidden = true;
     updatePhotoPreview();
     await persistData();
-    showToast('Photo area hidden from site.');
+    showToast('Photo hidden from site.');
 }
 
 async function restorePhoto() {
