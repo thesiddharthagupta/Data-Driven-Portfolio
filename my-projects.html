@@ -45,7 +45,10 @@
     <nav class="navbar scrolled"> <!-- Always scrolled on subpages -->
         <div class="nav-container">
             <a href="index.html" class="logo">Siddharth<span>.</span></a>
-            <ul class="nav-links">
+            <button class="hamburger" id="hamburger" aria-label="Open menu" aria-controls="nav-links" aria-expanded="false">
+                <span></span><span></span><span></span>
+            </button>
+            <ul class="nav-links" id="nav-links">
                 <li><a href="index.html#home" class="nav-link">Home</a></li>
                 <li><a href="index.html#projects" class="nav-link active">Projects</a></li>
                 <li><a href="index.html#contact" class="nav-link">Contact</a></li>
@@ -85,6 +88,36 @@
     <script>
         // Inline script for My Projects page
         document.addEventListener('DOMContentLoaded', async () => {
+            const hamburger = document.getElementById('hamburger');
+            const navLinks = document.getElementById('nav-links');
+            if (hamburger && navLinks) {
+                const closeMenu = () => {
+                    hamburger.classList.remove('open');
+                    navLinks.classList.remove('open');
+                    hamburger.setAttribute('aria-expanded', 'false');
+                    hamburger.setAttribute('aria-label', 'Open menu');
+                    document.body.classList.remove('menu-open');
+                };
+
+                hamburger.addEventListener('click', () => {
+                    const isOpen = navLinks.classList.toggle('open');
+                    hamburger.classList.toggle('open', isOpen);
+                    hamburger.setAttribute('aria-expanded', String(isOpen));
+                    hamburger.setAttribute('aria-label', isOpen ? 'Close menu' : 'Open menu');
+                    document.body.classList.toggle('menu-open', isOpen);
+                });
+
+                navLinks.querySelectorAll('a').forEach(link => link.addEventListener('click', closeMenu));
+                document.addEventListener('click', (event) => {
+                    if (navLinks.classList.contains('open') && !hamburger.contains(event.target) && !navLinks.contains(event.target)) {
+                        closeMenu();
+                    }
+                });
+                document.addEventListener('keydown', (event) => {
+                    if (event.key === 'Escape') closeMenu();
+                });
+            }
+
             // Initialize Neural Grid Background
             if (typeof NeuralGrid !== 'undefined') {
                 new NeuralGrid('projects-neural-canvas', 'projects-hero-section');
